@@ -1,0 +1,90 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ trans.deleted_vendors }} | Asseto{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div class="d-flex justify-content-between">
+        <div class="page-title">
+            <h3>{{ trans.deleted_vendors }}</h3>
+            <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end d-none d-md-block">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">{{ trans.dashboard }}</a></li>
+                    <li class="breadcrumb-item" aria-current="page">{{ trans.vendors }}</li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ trans.trash_bin }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'vendors:list' %}" class="btn btn-sm btn-outline-info my-3"><i class="bi bi-arrow-left"></i> {{ trans.back_to_vendors }}</a>
+        </div>
+    </div>
+    <section class="section">
+        <div class="card">
+            <div class="card-body">
+                {% if page_object %}
+                    <div class="d-flex justify-content-end my-2 gap-2">
+                        <input name="search_text" type="search" class='dataTable-input data-search' autocomplete="off" placeholder='{{ trans.search_here }}'
+                            hx-get="{% url 'recycle_bin:deleted_vendors_search' page_object.number %}" hx-trigger="keyup changed delay:500ms, search" hx-target="#search_result">
+                    </div>
+                {% endif %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="table1">
+                        <thead>
+                            <tr>
+                                <th>{{ trans.sl_no }}</th>
+                                <th>{{ trans.vendor_name }}</th>
+                                <th>{{ trans.contact_person }}</th>
+                                <th>{{ trans.email_label }}</th>
+                                <th>{{ trans.gstin }}</th>
+                                <th>{{ trans.phone_no }}</th>
+                                <th>{{ trans.datetime_label }}</th>
+                                <th>{{ trans.actions }}</th>
+                            </tr>
+                        </thead>
+                        {% if page_object %}
+                        <tbody id="search_result">
+                            {% for vendor in page_object %}
+                            <tr>
+                                <td>{{page_object.start_index|add:forloop.counter0}}</td>
+                                <td>{{vendor.name}}</td>
+                                <td>{{vendor.contact_person}}</td>
+                                <td>{{vendor.email}}</td>
+                                <td>{{vendor.gstin_number}}</td>
+                                <td>{{vendor.phone}}</td>
+                                <td>{{vendor.updated_at}}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Basic example">
+                                        {% if perms.recycle_bin.restore_recycle_bin %}
+                                        <form action="{% url 'recycle_bin:deleted_vendor_restore' vendor.id %}" method="post" onsubmit="return confirm('{{ trans.restore_confirm }}')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-arrow-repeat"></i></button>
+                                        </form>
+                                        {% endif %}
+                                        {% if perms.recycle_bin.delete_recycle_bin %}
+                                        <form action="{% url 'recycle_bin:deleted_vendor_permanently' vendor.id %}" method="post" onsubmit="return confirm('{{ trans.delete_permanently_confirm }}')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash3-fill"></i></button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        {% else %}
+                        <div class="alert alert-info" role="alert">
+                            {{ trans.no_record_available }}
+                        </div>
+                        {% endif %}
+                    </table>
+                </div>
+                {% include 'commons/pagination.html' %}
+            </div>
+        </div>
+
+    </section>
+</div>
+{% endblock content %}

@@ -1,0 +1,40 @@
+{% extends 'layouts/auth-layout.html' %}
+{% load static %}
+{% block title %}Verify OTP{% endblock title %}
+{% block content %}
+            <h1 class="title">Verify OTP</h1>
+            <p class="subtitle mb-5">Enter the 6-digit code from your authenticator app</p>
+
+            <div class="d-flex gap-2 mb-3 otp-inputs">
+                <input placeholder="1" type="text" maxlength="1" class="otp-box form-control text-center" />
+                <input placeholder="2" type="text" maxlength="1" class="otp-box form-control text-center" />
+                <input placeholder="3" type="text" maxlength="1" class="otp-box form-control text-center" />
+                <input placeholder="4" type="text" maxlength="1" class="otp-box form-control text-center" />
+                <input placeholder="5" type="text" maxlength="1" class="otp-box form-control text-center" />
+                <input placeholder="6" type="text" maxlength="1" class="otp-box form-control text-center" />
+            </div>
+
+            <form id="otpForm" method="POST" action="{% url 'authentication:verify_otp' %}">
+                {% csrf_token %}
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-light-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+                <input type="hidden" name="email" value="{{ email }}">
+                <input type="hidden" name="otp" id="userOtp">
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg shadow-lg mt-3">
+                    Verify
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-6 d-none d-lg-block">
+        <div id="auth-right" class="d-flex justify-content-center align-items-center flex-column">
+            <img src="{% static 'images/new_logo/illustration.svg' %}" alt="Illustration" class="img-login display-flex justify-content-center" width="50%">
+        </div>
+    </div>
+</div>
+<script src="{% static 'js/pages/verify_otp.js' %}" defer></script>
+{% endblock %}

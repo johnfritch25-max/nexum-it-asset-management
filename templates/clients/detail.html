@@ -1,0 +1,526 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+{% load cf_tags %}
+
+{% block title %}{{ client.name }} | {{ trans.client_details }} | Asseto{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/assets/assets-common.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/assets/assets-detail.css' %}">
+<style>
+  /* Colourful Section Icons */
+  .section-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .95rem;
+    flex-shrink: 0;
+  }
+
+  .section-icon.bg-blue {
+    background: #eff6ff;
+    color: #3b82f6;
+  }
+
+  .section-icon.bg-green {
+    background: #ecfdf5;
+    color: #10b981;
+  }
+
+  .section-icon.bg-purple {
+    background: #f5f3ff;
+    color: #8b5cf6;
+  }
+
+  .section-icon.bg-orange {
+    background: #fff7ed;
+    color: #f97316;
+  }
+
+  /* Empty State Centering Fix */
+  .detail-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 180px;
+  }
+
+  .detail-empty-state i {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Key Contacts Styling */
+  .detail-contact-card {
+    padding: 8px 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--pd-border);
+  }
+
+  .detail-contact-card:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+  .client-assignee-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    margin-right: 14px;
+  }
+
+  /* Dynamic Avatar Colors */
+  .avatar-blue {
+    background: #eff6ff;
+    color: #3b82f6;
+  }
+
+  .avatar-green {
+    background: #ecfdf5;
+    color: #10b981;
+  }
+
+  .avatar-purple {
+    background: #f5f3ff;
+    color: #8b5cf6;
+  }
+
+  .avatar-orange {
+    background: #fff7ed;
+    color: #f97316;
+  }
+
+  .detail-contact-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #475569;
+    text-decoration: none;
+    margin-top: 6px;
+  }
+
+  .detail-contact-link i {
+    color: #8b5cf6;
+  }
+
+  .detail-contact-link:hover {
+    color: #8b5cf6;
+  }
+
+  /* Timeline Adjustments */
+  .activity-log-item {
+    border-left: 2px solid #f1f5f9;
+    padding-bottom: 24px;
+  }
+
+  .detail-sub-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 1.5rem 0 1rem 0;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed var(--pd-border);
+  }
+</style>
+{% endblock css %}
+
+{% block content %}
+
+{# ── Page header ──────────────────────────────────────────────────────────── #}
+<div class="detail-page-header">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb page-breadcrumb mb-2">
+        <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">{{ trans.dashboard }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'clients:list' %}" class="breadcrumb-link">{{ trans.clients }}</a></li>
+        <li class="breadcrumb-item active">{{ trans.client_details }}</li>
+      </ol>
+    </nav>
+    <h1 class="page-title">{{ trans.client_details }}</h1>
+    <p class="page-subtitle">{{ trans.overview_for }} <strong class="detail-tag-inline">{{ client.name }}</strong></p>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'clients:list' %}" class="btn-reset">
+      <i class="bi bi-arrow-left"></i> {{ trans.back_to_list }}
+    </a>
+    <a href="{% url 'clients:update' client.id %}" class="btn-register ms-2">
+      <i class="bi bi-pencil-square"></i> {{ trans.update_client }}
+    </a>
+  </div>
+</div>
+
+{# ── Two-column layout ────────────────────────────────────────────────────── #}
+<div class="detail-layout">
+
+  {# ── Left / main column ──────────────────────────────────────────────────── #}
+  <div class="detail-main">
+
+    {# Client Information card #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon bg-blue"><i class="bi bi-building"></i></div>
+          <h2>{{ trans.client_information }}</h2>
+        </div>
+        <span class="detail-status-badge {% if client.status == '1' %}badge-available{% else %}badge-in-use{% endif %}">
+          {% if client.status == '1' %}{{ trans.active_caps_client }}{% elif client.status == '2' %}{{ trans.review_caps_client }}{%
+          elif client.status == '3' %}{{ trans.dormant_caps_client }}{% else %}{{ trans.inactive_caps_client }}{% endif %}
+        </span>
+      </div>
+      <div class="detail-card-body">
+
+        <div class="detail-fields-grid">
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.company_name }}</span>
+            <span class="detail-field-value fw-semibold">{{ client.name }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.client_id }}</span>
+            <span class="detail-field-value"><span class="asset-tag-pill">{{ client.client_id }}</span></span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.industry }}</span>
+            <span class="detail-field-value">{{ client.industry_name }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.corporate_website }}</span>
+            <span class="detail-field-value">
+              {% if client.corporate_website %}
+              <a href="{{ client.corporate_website }}" target="_blank" class="text-decoration-none"
+                style="color: #6366f1;">
+                <i class="bi bi-globe me-1"></i> {{ client.corporate_website }}
+              </a>
+              {% else %}—{% endif %}
+            </span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.street_address_label }}</span>
+            <span class="detail-field-value">{{ client.street_address|default:"—" }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.city_label }}</span>
+            <span class="detail-field-value">{{ client.city|default:"—" }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.state_label }}</span>
+            <span class="detail-field-value">{{ client.state|default:"—" }}</span>
+          </div>
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.zip_label }}</span>
+            <span class="detail-field-value">{{ client.zip_code|default:"—" }}</span>
+          </div>
+
+          {# Custom Fields #}
+          {% if cf_definitions|cf_has_any_value:cf_values %}
+          {% for defn in cf_definitions %}
+          {% if cf_values|get_cf_value:defn.field_key %}
+          <div class="detail-field">
+            <span class="detail-field-label">{{ defn.field_label }}</span>
+            <span class="detail-field-value">
+              {% if defn.field_type == 'boolean' %}
+                {% if cf_values|get_cf_value:defn.field_key == 'true' or cf_values|get_cf_value:defn.field_key == 'on' %}Yes{% else %}No{% endif %}
+              {% elif defn.field_type == 'url' %}
+                <a href="{{ cf_values|get_cf_value:defn.field_key }}" target="_blank">{{ cf_values|get_cf_value:defn.field_key }}</a>
+              {% else %}
+                {{ cf_values|get_cf_value:defn.field_key }}
+              {% endif %}
+            </span>
+          </div>
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+
+        </div>
+
+      </div>
+    </div>
+
+
+
+    {# Assets Table #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon bg-green"><i class="bi bi-laptop"></i></div>
+          <h2>{{ trans.asset_inventory_ledger }}</h2>
+        </div>
+        <form method="GET" class="d-flex align-items-center gap-2" style="margin-left: auto;">
+          <input type="hidden" name="asset_page" value="1">
+          <input type="search" name="asset_search" class="form-control form-control-sm"
+            placeholder="{{ trans.search_asset_placeholder }}" value="{{ asset_search|default:'' }}"
+            style="width: 320px;" id="assetSearchInput">
+          {% if assets_page_object %}
+          <button type="button" class="btn-export" id="exportAssetsBtn"><i class="bi bi-download"></i> {{ trans.export }}</button>
+          {% endif %}
+        </form>
+      </div>
+      <div class="detail-card-body p-0">
+        {% if assets_page_object %}
+          {% include 'commons/assets-table.html' %}
+          <div class="px-3">
+            {% include 'commons/list-pagination.html' with page_object=assets_page_object page_var='asset_page' %}
+          </div>
+        {% else %}
+        <div class="detail-empty-state">
+          <i class="bi bi-inbox"></i> <br>
+          <p>{{ trans.no_assets_client }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Locations Table #}
+    <div class="detail-card mt-4">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon bg-blue"><i class="bi bi-geo-alt"></i></div>
+          <h2>{{ trans.client_locations }}</h2>
+        </div>
+        <button type="button" class="btn-register ms-auto" id="add-client-location-button"
+          hx-get="{% url 'clients:add_location' client.id %}"
+          hx-target="#add-location-modal-content" data-bs-toggle="modal" data-bs-target="#add-location-modal">
+          <i class="bi bi-plus-lg"></i> {{ trans.add_location }}
+        </button>
+      </div>
+      <div class="detail-card-body p-0">
+        {% if client.locations.all %}
+          <div class="table-responsive">
+            <table class="list-table">
+              <thead>
+                <tr>
+                  <th>{{ trans.sl_no }}</th>
+                  <th>{{ trans.office_name_label }}</th>
+                  <th>{{ trans.contact_person_label }}</th>
+                  <th>{{ trans.state_city }}</th>
+                  <th>{{ trans.zip_code_label }}</th>
+                  <th>{{ trans.status_label }}</th>
+                  <th>{{ trans.actions }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for location in client.locations.all %}
+                {% if not location.is_deleted %}
+                <tr>
+                  <td class="table-index-cell">{{ forloop.counter|stringformat:"02d" }}</td>
+                  <td>
+                    <div class="cell-name-main">{{ location.office_name }}</div>
+                    <div class="cell-name-sub">{{ location.address.address_line_one|default:"" }}</div>
+                  </td>
+                  <td>
+                    <div class="cell-name-main">{{ location.contact_person_name|default:"—" }}</div>
+                    <div class="cell-name-sub">{{ location.contact_person_email|default:"" }}</div>
+                  </td>
+                  <td>{{ location.address.state|default:"—" }} / {{ location.address.city|default:"—" }}</td>
+                  <td>{{ location.address.pin_code|default:"—" }}</td>
+                  <td>
+                    {% if location.status %}
+                    <span class="status-badge status-active">{{ trans.active }}</span>
+                    {% else %}
+                    <span class="status-badge status-inactive">{{ trans.inactive }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <button type="button" class="action-btn" title="{{ trans.edit_location }}"
+                        hx-get="{% url 'clients:update_location' location.id %}"
+                        hx-target="#edit-location-modal-content"
+                        data-bs-toggle="modal" data-bs-target="#edit-location-modal">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      
+                      <form action="{% url 'clients:delete_location' location.id %}" method="post" class="form-row-action"
+                        onsubmit="return confirm('{{ trans.delete_confirm_location|escapejs }}')">
+                        {% csrf_token %}
+                        <button type="submit" class="action-btn danger" title="{{ trans.delete_location }}">
+                          <i class="bi bi-trash3"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+        <div class="detail-empty-state">
+          <i class="bi bi-geo-alt"></i> <br>
+          <p>{{ trans.no_locations_for_client }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>{# /detail-main #}
+
+  {# ── Right / sidebar column ──────────────────────────────────────────────── #}
+  <div class="detail-sidebar">
+
+    {# Key Contacts #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon bg-purple"><i class="bi bi-person-lines-fill"></i></div>
+          <h2>{{ trans.key_contacts }}</h2>
+        </div>
+      </div>
+      <div class="detail-card-body">
+        {% if client.contacts.all %}
+        {% for contact in client.contacts.all %}
+        <div class="detail-contact-card">
+          <div class="d-flex align-items-center mb-2">
+            <div class="client-assignee-avatar
+                        {% if forloop.counter|divisibleby:4 %}avatar-blue
+                        {% elif forloop.counter|divisibleby:3 %}avatar-green
+                        {% elif forloop.counter|divisibleby:2 %}avatar-orange
+                        {% else %}avatar-purple{% endif %}">
+              {{ contact.initials }}
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <div class="fw-bold" style="font-size: 15px;">{{ contact.name }}</div>
+                {% if contact.is_portal_active %}
+                <span class="badge bg-success-light text-success" style="font-size: 10px; padding: 2px 6px; border-radius: 4px;">{{ trans.access_granted }}</span>
+                {% endif %}
+              </div>
+              <div class="small text-muted" style="font-size: 12px;">{{ contact.role.related_name|default:trans.primary_contact_fallback }}</div>
+              {% if contact.email %}
+              <div><a href="mailto:{{ contact.email }}" class="detail-contact-link"><i class="bi bi-envelope"></i> {{ contact.email }}</a></div>
+              {% endif %}
+              {% if contact.phone %}
+              <div><a href="tel:{{ contact.phone }}" class="detail-contact-link"><i class="bi bi-telephone"></i> {{ contact.phone }}</a></div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="detail-empty-state py-3">
+          <p>{{ trans.no_contacts_listed }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Activity Log #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon bg-orange"><i class="bi bi-clock-history"></i></div>
+          <h2>{{ trans.activity_log }}</h2>
+        </div>
+      </div>
+      <div class="detail-card-body p-0">
+        <ul class="activity-log-list">
+          {% if activities %}
+          {% for activity in activities %}
+          <li class="activity-log-item">
+            <div class="activity-dot
+              {% if activity.history_type == '+' %}dot-create
+              {% elif activity.history_type == '-' %}dot-delete
+              {% else %}dot-update{% endif %}">
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">{{ activity.action }} {{ activity.type }}</div>
+              <div class="activity-meta">
+                {{ activity.date|date:"M d, Y" }} · {{ activity.notes }}
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+          {% else %}
+          <li class="activity-log-item">
+            <div class="activity-dot" style="border-color: #cbd5e1; border-width: 2px;"></div>
+            <div class="activity-content">
+              <div class="activity-title">{{ trans.no_activity_recorded }}</div>
+            </div>
+          </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+
+  </div>{# /detail-sidebar #}
+
+</div>{# /detail-layout #}
+
+{# ── Add modal ───────────────────────────────────────────────────────────── #}
+<div class="modal fade" id="add-location-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div id="add-location-modal-content" class="modal-content" hx-target="this"></div>
+  </div>
+</div>
+
+{# ── Edit modal ───────────────────────────────────────────────────────────── #}
+<div class="modal fade" id="edit-location-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div id="edit-location-modal-content" class="modal-content" hx-target="this"></div>
+  </div>
+</div>
+
+<script>
+  // Reload page when a location is added
+  document.body.addEventListener("clientLocationAdded", function () {
+    location.reload();
+  });
+
+  const assetSearchForm = document.querySelector('#assetSearchInput')?.closest('form');
+  const assetSearchInput = document.getElementById('assetSearchInput');
+  if (assetSearchInput && assetSearchForm) {
+    let debounceTimer;
+    assetSearchInput.addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        assetSearchForm.submit();
+      }, 500);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const exportBtn = document.getElementById('exportAssetsBtn');
+    const table = document.getElementById('assetsTable');
+    if (exportBtn && table) {
+      exportBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        const rows = table.querySelectorAll('tr');
+        let csv = [];
+        rows.forEach(r => {
+          let row = Array.from(r.querySelectorAll('td, th')).map(c => `"${c.innerText.trim().replace(/"/g, '""')}"`);
+          csv.push(row.join(','));
+        });
+        const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'client_assets_export.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+    }
+  });
+</script>
+{% endblock content %}

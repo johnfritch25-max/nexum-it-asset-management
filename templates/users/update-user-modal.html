@@ -1,0 +1,239 @@
+{% load static %}
+<div class="modal-content modal-premium">
+    <div class="modal-header border-0 pb-0">
+        <div class="d-flex flex-column">
+            <h5 class="modal-title fw-bold" id="myModalLabel160">{{ trans.update_user }}</h5>
+            <p class="modal-subtitle mb-0">{{ trans.update_user_subtitle }}</p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <form hx-encoding='multipart/form-data' hx-post='{{request.path}}' novalidate>
+        {% csrf_token %}
+        <div class="modal-body">
+
+            <!-- Section: Personal Information -->
+            <div class="section-header">
+                <div class="icon-box">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <h6 class="section-title">{{ trans.personal_information }}</h6>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <div class="premium-input-group">
+                        <label>{{ trans.full_name }} <span class="text-danger">*</span></label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-person"></i>
+                            {{form.full_name}}
+                        </div>
+                        {% for error in form.full_name.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="premium-input-group">
+                        <label>{{ trans.email_address }} <span class="text-danger">*</span></label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-envelope"></i>
+                            {{form.email}}
+                        </div>
+                        {% for error in form.email.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="premium-input-group">
+                        <label>{{ trans.phone_number }} <span class="text-danger">*</span></label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-phone"></i>
+                            {{form.phone}}
+                        </div>
+                        {% for error in form.phone.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Office Information -->
+            <div class="section-header">
+                <div class="icon-box">
+                    <i class="bi bi-briefcase-fill"></i>
+                </div>
+                <h6 class="section-title">{{ trans.office_information }}</h6>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="premium-input-group">
+                        <label>{{ trans.department_label }}</label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-collection"></i>
+                            {{form.department}}
+                        </div>
+                        {% for error in form.department.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="premium-input-group">
+                        <label>{{ trans.job_title_role }}</label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-person-badge"></i>
+                            {{form.role}}
+                        </div>
+                        {% for error in form.role.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="premium-input-group">
+                        <label>{{ trans.office_location_label }}</label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-geo-alt"></i>
+                            {{form.location}}
+                        </div>
+                        {% for error in form.location.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="premium-input-group">
+                        <label>{{ trans.profile_picture }}</label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-image"></i>
+                            {{form.profile_pic}}
+                        </div>
+                        {% for error in form.profile_pic.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    <div id="imagePreview" class="mt-2 text-center">
+                        {% if user.profile_pic %}
+                            <img src="{{user.profile_pic.url}}" class="rounded-circle border shadow-sm" style="width: 80px; height: 80px; object-fit: cover;"/>
+                        {% else %}
+                            <img src="{% static 'images/faces/1.jpg' %}" class="rounded-circle border shadow-sm" style="width: 80px; height: 80px; object-fit: cover;"/>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+
+                    <div class="form-check form-switch mb-0">
+                        <input type="checkbox" class="form-check-input" id="toggle_password" name="toggle_password" {% if has_usable_password %}checked{% endif %}>
+                        <label class="form-check-label fw-bold" for="toggle_password">{{ trans.enable_user_login }}</label>
+                    </div>
+                    <div class="form-check form-switch mt-2">
+                        <input type="checkbox" class="form-check-input" id="is_technician" name="is_technician" {% if is_technician %}checked{% endif %}>
+                        <label class="form-check-label fw-bold" for="is_technician">{{ trans.is_technician }}</label>
+                    </div>
+
+                </div>
+
+                <div id="password_fields" class="row g-3 d-none">
+                    <div class="col-md-6">
+                        <div class="premium-input-group">
+                            <label>{{ trans.password_label }}</label>
+                            <div class="premium-input-with-icon">
+                                <i class="bi bi-lock"></i>
+                                {{ form.password1 }}
+                            </div>
+                            {% for error in form.password1.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="premium-input-group">
+                            <label>{{ trans.repeat_password }}</label>
+                            <div class="premium-input-with-icon">
+                                <i class="bi bi-unlock"></i>
+                                {{ form.password2 }}
+                            </div>
+                            {% for error in form.password2.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Address Information -->
+            <div class="section-header">
+                <div class="icon-box">
+                    <i class="bi bi-geo-alt-fill"></i>
+                </div>
+                <h6 class="section-title">{{ trans.address_information }}</h6>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <div class="premium-input-group">
+                        <label>{{ trans.street_address }}</label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-house"></i>
+                            {{address_form.address_line_one}}
+                        </div>
+                        {% for error in address_form.address_line_one.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="premium-input-group">
+                        <label>{{ trans.city }}</label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-building"></i>
+                            {{address_form.city}}
+                        </div>
+                        {% for error in address_form.city.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="premium-input-group">
+                        <label>{{ trans.state_province }}</label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-map"></i>
+                            {{address_form.state}}
+                        </div>
+                        {% for error in address_form.state.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="premium-input-group">
+                        <label>{{ trans.zip_code }}</label>
+                        <div class="premium-input-with-icon">
+                            <i class="bi bi-hash"></i>
+                            {{address_form.pin_code}}
+                        </div>
+                        {% for error in address_form.pin_code.errors %}
+                            <small class="text-danger">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Custom Fields -->
+            {% include "custom_fields/_cf_fields_modal_block.html" %}
+
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-discard" data-bs-dismiss="modal">{{ trans.discard }}</button>
+            <button type="submit" class="btn-save-user" data-saving-text="{{ trans.saving }}">
+                {{ trans.save_changes }}
+            </button>
+        </div>
+    </form>
+</div>

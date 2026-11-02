@@ -1,0 +1,309 @@
+# Changelog
+
+All notable changes to Asseto Asset Management are documented here.
+
+This project follows [Semantic Versioning](https://semver.org/) and the format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+---
+
+## [Unreleased]
+
+> Changes staged on `develop` that have not yet been released.
+
+---
+
+## [v1.8.4] — 2026-10-25
+
+### Security
+- **Python Dependencies Vulnerability Updates** — Upgraded `PyJWT` to `2.15.0` and `virtualenv` to `21.14.13` in `requirements.txt` to patch known security vulnerabilities.
+
+---
+
+## [v1.8.3] — 2026-10-25
+
+### Added
+- **Consumable Unique IDs & Serialized Consumable Units (PR #279)** — Added unique `consumable_id` field to `Consumable` model, introduced `SerializedConsumableUnit` model for granular item serialization, status workflows (`AVAILABLE`, `ALLOCATED`, `DAMAGED`, `DISPOSED`), unit-level checkouts via interactive modal (`templates/consumables/_checkout-modal.html`), management command `backfill_consumable_ids` for existing inventory, and multi-language translation support (`en`, `bn`, `fr`, `hi`).
+
+### Fixed
+- **Logged-in User in Default User List (PR #280 / ASM-55)** — Resolved issue where the currently authenticated user was omitted from default user list responses in `users/api_views.py` and `users/serializers.py`.
+- **Search User List API Query Parameter Handling** — Allowed calling the user search endpoint without mandatory query parameters, falling back gracefully to paginated active user results.
+
+### Security
+- **Python Dependencies Vulnerability Updates** — Upgraded packages in `requirements.txt` including `Django==5.2.17`, `djangorestframework==3.18.2`, `PyJWT==2.14.0`, `pypdf==6.21.2`, `urllib3==2.8.0`, `certifi==2026.10.19`, `pillow==13.0.0`, `virtualenv==21.14.9`, `packaging==26.3`, `black==26.10.1`, and `filelock==4.2.1`.
+
+---
+
+## [v1.8.2] — 2026-09-25
+
+### Added
+- **Select2 Dynamic Search Dropdowns** — Integrated Select2 library (`static/vendor/select2/`) with custom theme styling (`static/css/common/select2-theme.css`) and global initializer (`static/js/select2-init.js`) across Client Portal, Support Tickets, Assets, Consumables, and Bulk Import workflows.
+- **Common Filtered HTMX Pagination** — Introduced a reusable filtered pagination partial (`templates/commons/htmx-pagination.html`) preserving active search filters and query parameters across 14 module list views.
+- **Multi-Language Translations** — Added comprehensive translation coverage for Bengali (`bn`), Hindi (`hi`), and French (`fr`) for Consumables, Upload, Asset, and General configuration dictionaries.
+- **Client Column & Filters in Asset List** — Added client filter dropdown and conditional client column visibility in asset list views.
+
+### Changed
+- **Asset Table Row Componentization** — Refactored asset table rows into a modular partial template (`templates/assets/_asset_row.html`) for cleaner maintenance and improved HTMX rendering performance.
+- **Bulk Upload & Mapping Modals UI Overhaul** — Modernized bulk import step indicators and modal interfaces with dedicated styling (`static/css/pages/upload-modals.css`).
+
+### Fixed
+- **Asset Assignment & Reassignment Workflow** — Resolved errors encountered during asset assignment and user association in `assets/utils.py` and `assets/views.py`.
+- **Asset Search & Date Formatting** — Fixed search and pagination state preservation on the asset list view, along with standardizing system default date formats.
+- **Dashboard Count & Percentage Metrics** — Fixed department and location calculation accuracy in dashboard views.
+
+### Security
+- **Python Dependencies Vulnerability Patching** — Upgraded `cryptography>=43.0.1` and `requests>=2.32.2` in `requirements.txt` to remediate known Dependabot security advisories.
+
+---
+
+## [v1.8.1] — 2026-09-17
+
+### Added
+- **Consumables Management Module** — Comprehensive non-capital inventory tracking (quantity, remaining quantity, purchase details, location, vendor), automated low stock email alerts (`consumables/utils.py`), supporting document uploads (`ConsumableDocument`), soft-delete Recycle Bin workflow, and granular RBAC permission gates.
+- **Custom Fields API Filtering** — Added `module` query parameter support in `Get Custom Fields List API` (`custom_fields/views.py`) for module-filtered custom fields retrieval.
+
+### Changed
+- **Audit Scheduling Guard Clauses** — Added defensive `None` next due date handling in `audit/utils.py` and `audit/api_utils.py` preventing calculation errors.
+- **Showcase & Documentation Updates** — Expanded `README.md` and `ROADMAP.md` with system architecture diagrams, milestone updates, and rich UI previews for core modules.
+
+### Fixed
+- **Consumables Quantity Recalculation** — Resolved quantity update and remaining quantity calculation discrepancies in `consumables/forms.py` and views.
+- **Location Bulk Upload Empty Cells** — Fixed `NaN` parsing issue when bulk uploading CSV files with empty location cells (`upload/views/location_views.py`).
+
+---
+
+## [v1.8.0] — 2026-09-13
+
+### Added
+- **Automated Secret Scanning** — Added Gitleaks hook (`v8.18.4`) to pre-commit configuration (`.pre-commit-config.yaml`) for automated secret and credential leak prevention.
+- **Granular Recycle Bin Permission Controls** — Added role permission guards (`has_role_permission`) across all Recycle Bin templates and table partials to conditionally restrict restore and permanent delete actions.
+- **Navigation & Asset Permission Guards** — Enforced role-based access control across sidebar navigation items (`templates/commons/sidebar.html`), asset list and filter views, and user edit modals.
+
+### Changed
+- **Permission Registry & Role Modals Refactor** — Updated permission definitions and mappings in `common/permissions.py` and overhauled role add/edit modals (`templates/roles/add-role-modal.html`, `templates/roles/update-role-modal.html`) with improved category layouts, checkboxes, and prerequisite view locking.
+- **Backend View Authorization** — Enforced role permissions across upload views (departments, locations, product categories, product types, users, vendors), configuration views, and license types.
+- **Asset Utility Cleanup** — Removed redundant and duplicate helper code from `assets/utils.py`.
+
+### Fixed
+- **Asset Assignment Status Consistency (ASM-34)** — Fixed `UnAssignAsset` REST API endpoint in `assets/api_views.py` to follow the standard unassignment workflow consistent with the web interface.
+- **Role Modal Permission Bindings** — Resolved script handling and checkbox binding issues in role creation and update modals.
+
+### Security
+- **Firebase Messaging Service Worker (V-001)** — Removed hardcoded Firebase credentials from `static/firebase-messaging-sw.js`, migrating to secure dynamic registration query parameter initialization.
+
+---
+
+## [v1.7.0] — 2026-09-05
+
+### Added
+- **Granular RBAC Permissions Architecture** — Introduced `common/permissions.py` as the centralized single source of truth for all system role modules and permissions, replacing scattered permission strings.
+- **Role Editor Permission Matrix** — Implemented an interactive role add/edit modal that automatically enforces and locks prerequisite view permissions whenever add, edit, or delete actions are toggled.
+- **Role Listing Enhancements** — Redesigned role listing page with per-module granted/denied icon indicators (`static/css/pages/roles-list.css` and `role_permission_tags`), replacing legacy flat action badges.
+- **Permission Sync & Verification Commands** — Added custom Django management commands `sync_permissions` and `verify_permission_migration` for automated role permission synchronization and migration verification.
+- **Direct Password Reset in User Modal** — Added optional toggle to set or update user passwords directly from the update user modal with password confirmation validation.
+
+### Changed
+- **Permission Scoping for Assets & Support Tickets** — Replaced global access level checks with granular, permission-based scoping across assets and support tickets.
+- **Namespaced Permission Checks** — Migrated legacy permission checks from `authentication` app namespace to domain-specific feature namespaces (`assets`, `clients`, `vendors`, `products`, `dashboard`, `configurations`).
+- **Cleaned Obsolete Onboarding Templates** — Removed deprecated progression bar and first-time installation templates.
+
+### Fixed
+- **Role Assignment & Group Clearing** — Fixed role switching bug in user edit flow where previously-assigned role groups persisted, ensuring a clean transition between roles.
+- **User Detail & Modal Form Labels** — Corrected form field labels across user listing, add modal, and update modal views.
+- **Atomic Permission Updates** — Wrapped role permission updates within atomic database transactions to prevent partial updates on failure.
+
+### Security
+- **sqlparse** — Bumped `0.5.5 → 0.6.0` to resolve 5 HIGH/MODERATE CVEs including `TokenList.__init__` CPU DoS (CVE-2026-54284), quadratic DoS in `group_comments`, and ReDoS in dollar-quoted literals.
+- **pypdf** — Bumped `6.15.0 → 6.16.2` to patch infinite loop in `TreeObject.insert_child` (CVE-2026-84309), outline traversal resource exhaustion (CVE-2026-84310), and exponential XForm text extraction memory usage (CVE-2026-84311).
+- **djangorestframework** — Bumped `3.16.1 → 3.17.2` to properly enforce `DATA_UPLOAD_MAX_MEMORY_SIZE` during request parsing (CVE-2026-73228) and fix GET-protected data disclosure in `AdminRenderer` (CVE-2026-73229).
+
+---
+
+## [1.6.7] — 2026-08-24
+
+### Added
+- **Global Dynamic Custom Fields** — Implemented global custom field system (`custom_fields` app) for Assets, Clients, Vendors, and Users with field definitions, value models, soft delete (`is_deleted`), and customizable UI forms and modals.
+- **Bulk Asset Import Custom Fields Support** — Added dynamic custom field data parsing and validation in CSV bulk asset upload workflows.
+- **Localization for Custom Fields** — Added multilingual translation keys (English, Hindi, Bengali, French) and enhanced error handling UI for custom field configurations.
+- **Authentication & Permission Decorators** — Enabled authentication and strict permission check decorators for listed assets view.
+
+### Changed
+- **Entity Details Views** — Redesigned details pages for Assets, Clients, Products, and Vendors to seamlessly display custom fields and their values.
+- **Audit Image Upload & Tag Config** — Refactored audit image upload and tag configuration forms for better UX and reliability.
+
+### Fixed
+- **Asset Details API** — Resolved serialization and response format bugs in the asset details API endpoint.
+
+### Security
+- **cryptography, pypdf & h2** — Updated project dependencies in `requirements.txt` to patch known security vulnerabilities.
+
+---
+
+## [1.6.6] — 2026-08-03
+
+### Added
+- **Docker & Shell Script Deployment Setup** — Introduced single-command installation (`setup.sh`), `Dockerfile`, `nginx.conf`, and `SETUP.md` for containerized application setup, Nginx reverse proxy, domain binding, and database connectivity.
+- **Admin Registration CLI Command** — Implemented custom Django management command `user_register` for secure initial administrator creation using environment variable credentials.
+
+### Changed
+- **Tag Configuration** — Refactored Tag Configuration forms and templates to make prefix and suffix fields optional.
+- **Support Ticket Layout** — Added ticket status dropdown and updated support ticket details view layout.
+
+### Fixed
+- **User Bulk Upload** — Resolved data processing, error handling, and session bugs during bulk user upload.
+- **Asset Import & User Default Handling** — Fixed step indicator UI layout in asset bulk import workflow and default active user filtering.
+
+### Security
+- **Pillow** — Bumped `12.2.0 → 12.3.0` to patch 13 HIGH/MODERATE CVEs including JPEG2000 DoS, heap out-of-bounds reads/writes, decompression bomb bypasses, and OS command injection.
+- **pypdf** — Bumped `6.10.2 → 6.14.2` to patch 10 HIGH/MODERATE CVEs including infinite loops for unterminated inline images, excessive memory usage, and long runtime attacks.
+- **cryptography** — Bumped `46.0.7 → 49.0.0` to resolve HIGH CVE for vulnerable OpenSSL included in wheels.
+- **pyasn1** — Bumped `0.6.3 → 0.6.4` to patch 2 HIGH CVEs: uncontrolled resource consumption and quadratic complexity DoS in OID processing.
+- **msgpack** — Bumped `1.1.2 → 1.2.1` to patch HIGH CVE for out-of-bounds read/crash on Unpacker reuse after a caught error.
+- **Django** — Bumped `5.2.14 → 5.2.16` to patch LOW CVE for STARTTLS partially-initialized connection reuse.
+- **setuptools** — Relaxed constraint from `<82.0.0` to `>=83.0.0` to patch CVE for Unicode normalization bypass in `MANIFEST.in` exclusions.
+
+---
+
+## [1.6.5] — 2026-07-25
+
+### Added
+- **Asset Bulk Import Feature** — Implemented comprehensive asset bulk import workflows with Excel and ZIP upload support, transaction integrity, and progress indicators.
+
+### Changed
+- **Support Ticket Kanban View** — Redesigned ticket Kanban view, updated closed ticket handling logic, and enhanced overall ticket management workflows.
+- **Documentation & UI Branding** — Updated README documentation, refreshed maintainer details, and tuned sidebar logo dimensions.
+
+### Fixed
+- **Product Categories & Subcategories** — Fixed update errors in product category and subcategory selection within the products module.
+- **Asset Details & Notifications** — Resolved asset details view display issues and removed blocking notifications during bulk asset insertion for smoother processing.
+
+---
+
+## [1.6.4] — 2026-07-13
+
+### Added
+- **Technician role for users** — Implemented the technician role for users, showing only active and enabled users in technician lists, and added a Maintenance and repairs log section in asset details.
+- **Client location feature** — Integrated client location details into the client portal module.
+- **Two-way support comments** — Implemented two-way support ticket comment workflows in both the client portal and admin, including file upload validation, staff comment flags, and UI text localization.
+- **Support ticket happy codes** — Implemented Happy Code validation, migration, and UI submission flows for support tickets on both admin and client portals.
+
+### Changed
+- **Asset details view** — Restored and redesigned the Maintenance and repairs section as well as the Maintenance log in the asset details view.
+- **Client portal notifications** — Replaced success alert views with Toastify notifications for ticket actions.
+- **Cleaned localization setup** — Moved translation code from `__init__.py` to utility and constant modules.
+- **General UI improvements** — Removed the recycle bin statistics card from listing pages, improved the ticket Kanban view UI, and deduplicated views in the client portal.
+
+### Fixed
+- **2FA login API bug** — Fixed 2FA verification issues inside the login API.
+- **Phone number validations** — Added phone number validation in user and client models.
+- **Filtering & searching** — Fixed filtering and searching bugs in the vendor list and client list.
+- **Gate pass & authorization** — Fixed issues related to saving gate passes and authorization settings.
+- **Environment config** — Sanitized Firebase credential path and corrected environment example comments.
+- **OTP verification page** — Fixed OTP verification HTML code layout and alignment issues.
+- **Session cache invalidation** — Invalidated session cache correctly after updating user language settings.
+
+---
+
+## [1.6.3] — 2026-06-23
+
+### Added
+- **`is_logged_in` field on `UserTotp`** — Restored the `is_logged_in` boolean field to the `UserTotp` model (migration `0033`) to track active 2FA sessions correctly after the earlier rename migration.
+- **Client Portal ticket creation and detail views** — Added `client_portal_add_ticket` and `client_portal_ticket_detail` views with corresponding URL patterns so portal users can open and view support tickets.
+- **Global search API** — Extracted `GlobalSearch` API view into a dedicated `dashboard/api_views/` package with a clean module boundary.
+
+### Changed
+- **Code refactor — large-scale codebase cleanup** (`feature/code-refactor-1`) — PEP 8 formatting, DRY improvements, extracted shared logic to managers/mixins/utils, consolidated duplicate imports across 700+ files.
+- **Dashboard URL structure** — `api_view` module re-mapped from `dashboard/views/` to `dashboard/api_views/` for clearer separation of HTML and API concerns.
+- **Test organisation** — Moved app-level test files from flat `tests.py` to structured `tests/` packages (`test_assets.py`, `test_audit.py`, `test_products.py`, `test_vendors.py`, `test_dashboard.py`, `test_license.py`).
+- **Pre-commit configuration** — Added `.pre-commit-config.yaml` to enforce linting and formatting on every commit.
+- **`pyproject.toml`** — Added project-level tooling configuration.
+
+### Fixed
+- **`NameError: user_passes_test`** — Added missing import for `user_passes_test`, `logout`, `render`, `redirect`, and `get_object_or_404` in `authentication/views.py`.
+- **Merge conflict syntax errors** — Resolved leftover git conflict markers in `products/api_utils.py` and `client_portal/views.py` that prevented the server from starting.
+- **`ImportError: cannot import name 'api_view'`** — Fixed incorrect import path for the global search API view in `dashboard/urls.py`.
+- **Relative import paths** — Fixed `from .serializers` and `from .api_utils` imports inside `dashboard/api_views/global_search_api_views.py` to use correct parent-package references.
+
+---
+
+## [1.6.2] — 2026-06-06
+
+### Changed
+- **Tailwind Play CDN Integration** — Disabled Tailwind Preflight (global CSS reset) on gate pass pages to prevent layout margin and font distortion.
+- **Form Switch Toggle Fix** — Removed Tailwind Forms plugin from the gate pass templates to prevent overriding Bootstrap's switch toggle styling for the dark/light mode button.
+
+### Fixed
+- **Cleaned Codebase** — Removed legacy commented-out HTML sections, duplicate scripts, and old Python API routing code from the gate pass module.
+
+---
+
+## [1.6.1] — 2026-06-04
+
+### Security
+- **urllib3** upgraded `2.6.3` → `2.7.0` — fixes decompression-bomb bypass in streaming API (PYSEC-2026-142) and sensitive headers forwarded across origins in proxied redirects (PYSEC-2026-141)
+- **Django** upgraded `5.2.13` → `5.2.14` — fixes improper length parameter handling (Moderate), persistent cookies containing sensitive information (Low), and cache containing sensitive information (Low)
+- **idna** upgraded `3.10` → `3.15` — fixes bypass of CVE-2024-3651 fix via specially crafted inputs to `idna.encode()` (CVE-2026-45409)
+- **PyJWT** upgraded `2.12.1` → `2.13.0` — fixes multiple JWT security advisories (PYSEC-2026-175/176/177/178/179)
+
+---
+
+## [1.6.0] — 2026-06-04
+
+### Added
+- **Client Portal** — Client login, dashboard, asset view, and support ticket portal with OTP verification
+- **Client Portal Middleware** — Session-based client authentication middleware
+- **Support Tickets** — Client association on support tickets; full ticket lifecycle management
+- **Gate Pass QR** — Dynamic QR code generation on gate pass print document
+- **Gate Pass** — Gate pass features including status workflow, search fix, authorization approval, and card count on listing page
+- **Client Management** — Contact management, PDF/CSV export, client portal activation flag
+- **Role Management** — Gate pass and client portal permissions integrated into RBAC
+
+### Changed
+- Gate Pass UI — footer fix on add page, discard button fix, design improvements throughout
+- Support ticket CSS — improved styling and layout
+- Client listing and details pages — redesigned for clarity
+- `.gitignore` — `.knowledge-base` ignored recursively
+
+### Fixed
+- User dropdown and notification rendering issue
+- Gate Pass ID structure corrected
+- Dark mode design issue on details pages
+
+---
+
+## [1.2.0] — 2026-05-25
+
+### Added
+- Gate pass module with QR code checkout support
+- Support ticket system with priority labels and status workflow
+- Role management redesign for client portal
+- Client portal feature branch
+
+### Changed
+- Asset list and filter pages refactored for performance
+- Code refactor across multiple modules for maintainability
+
+### Fixed
+- Various UI improvements and bug fixes across the application
+
+---
+
+<!-- Template for new entries — copy and fill in above this line
+
+## [X.Y.Z] — YYYY-MM-DD
+
+### Added
+-
+
+### Changed
+-
+
+### Fixed
+-
+
+### Security
+-
+
+### Removed
+-
+
+-->

@@ -1,0 +1,87 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ trans.deleted_clients }} | Asseto{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div class="d-flex justify-content-between">
+        <div class="page-title">
+            <h3>{{ trans.deleted_clients }}</h3>
+            <nav aria-label="breadcrumb" class="breadcrumb-header float-start float-lg-end d-none d-md-block">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">{{ trans.dashboard }}</a></li>
+                    <li class="breadcrumb-item" aria-current="page">{{ trans.clients }}</li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ trans.trash_bin }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'clients:list' %}" class="btn btn-sm btn-outline-info my-3"><i class="bi bi-arrow-left"></i> {{ trans.back_to_clients }}</a>
+        </div>
+    </div>
+    <section class="section">
+        <div class="card">
+            <div class="card-body">
+                {% if page_object %}
+                    <div class="d-flex justify-content-end my-2 gap-2">
+                        <input name="search_text" type="search" class='dataTable-input data-search' autocomplete="off" placeholder='{{ trans.search_here }}'
+                            hx-get="{% url 'recycle_bin:deleted_clients_search' page_object.number %}" hx-trigger="keyup changed delay:500ms, search" hx-target="#search_result">
+                    </div>
+                {% endif %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="table1">
+                        <thead>
+                            <tr>
+                                <th>{{ trans.sl_no }}</th>
+                                <th>{{ trans.client_id }}</th>
+                                <th>{{ trans.name_label }}</th>
+                                <th>{{ trans.industry }}</th>
+                                <th>{{ trans.rental_type }}</th>
+                                <th>{{ trans.deleted_at }}</th>
+                                <th>{{ trans.actions }}</th>
+                            </tr>
+                        </thead>
+                        {% if page_object %}
+                        <tbody id="search_result">
+                            {% for client in page_object %}
+                            <tr>
+                                <td>{{page_object.start_index|add:forloop.counter0}}</td>
+                                <td>{{client.client_id}}</td>
+                                <td>{{client.name | title}}</td>
+                                <td>{{client.industry|default:"-"}}</td>
+                                <td>{{client.rental_type}}</td>
+                                <td>{{client.updated_at}}</td>
+                                <td>
+                                    <div class="d-flex gap-1" role="group" aria-label="Basic example">
+                                        {% if perms.recycle_bin.restore_recycle_bin %}
+                                        <form action="{% url 'recycle_bin:deleted_clients_restore' client.id %}" method="post" onsubmit="return confirm('{{ trans.restore_confirm }}')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-success btn-sm" title="{{ trans.restore_label }}"><i class="bi bi-arrow-repeat"></i></button>
+                                        </form>
+                                        {% endif %}
+                                        {% if perms.recycle_bin.delete_recycle_bin %}
+                                        <form action="{% url 'recycle_bin:deleted_clients_permanently' client.id %}" method="post" onsubmit="return confirm('{{ trans.delete_permanently_confirm }}')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm" title="{{ trans.permanently_delete }}"><i class="bi bi-trash3-fill"></i></button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        {% else %}
+                        <div class="alert alert-info" role="alert">
+                            {{ trans.no_record_available }}
+                        </div>
+                        {% endif %}
+                    </table>
+                </div>
+                {% include 'commons/pagination.html' %}
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock content %}

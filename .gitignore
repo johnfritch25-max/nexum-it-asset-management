@@ -1,0 +1,60 @@
+# *.py[cod]
+**/__pycache__
+**/.env
+**/env
+.pytest_cache
+media
+backups
+db.sqlite3
+staticfiles
+docker-compose.yml
+firebase-credentials.json
+*.log
+.superpowers
+.superpowers/
+**/.superpowers
+**/.superpowers/
+
+# AI assistant config files — keep local only, never push to GitHub
+INSTRUCTIONS.md
+.agents
+.agents/
+**/.agents
+**/.agents/
+agents.md
+.claude
+.claude/
+
+# Tool-agnostic AI rules folder
+.ai-rules/
+.ai-rules
+
+# Tool-specific AI config files
+.cursorrules
+.superpowers
+.superpowers/
+.windsurfrules
+.knowledge-base
+.knowledge-base/
+**/.knowledge-base
+**/.knowledge-base/
+.mypy_cache
+.cursorignore
+
+# macOS System Files
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+docs
+CLAUDE.md
+
+# Explicitly track these files (overrides any parent ignore rules):
+# compose.yaml and .env.example are intentionally committed
+!compose.yaml
+!.env.example

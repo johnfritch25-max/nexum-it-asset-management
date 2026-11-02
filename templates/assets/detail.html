@@ -1,0 +1,730 @@
+{% extends 'layouts/main-layout.html' %}
+{% load custom_filters %}
+{% load static %}
+{% load cf_tags %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block title %}{{ asset.tag }} — {{ trans.asset_details }} | Asseto{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/assets/assets-common.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/assets/assets-detail.css' %}">
+{% endblock css %}
+
+{% block content %}
+
+{# ── Page header ──────────────────────────────────────────────────────────── #}
+<div class="detail-page-header">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb page-breadcrumb mb-2">
+        <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">{{ trans.dashboard }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'assets:list' %}" class="breadcrumb-link">{{ trans.assets }}</a></li>
+        <li class="breadcrumb-item active">{{ trans.asset_details }}</li>
+      </ol>
+    </nav>
+    <h1 class="page-title">{{ trans.asset_details }}</h1>
+    <p class="page-subtitle">{{ trans.detailed_overview_history }} <strong class="detail-tag-inline">{{ asset.tag }}</strong></p>
+  </div>
+  <div class="header-actions">
+    <a href="{% url 'assets:list' %}" class="btn-reset">
+      <i class="bi bi-arrow-left"></i> {{ trans.back_to_list }}
+    </a>
+    <a href="{% url 'assets:update_in_detail' asset.id %}" class="btn-register ms-2">
+      <i class="bi bi-pencil-square"></i> {{ trans.update_asset }}
+    </a>
+  </div>
+</div>
+
+{# ── Two-column layout ────────────────────────────────────────────────────── #}
+<div class="detail-layout">
+
+  {# ── Left / main column ──────────────────────────────────────────────────── #}
+  <div class="detail-main">
+
+    {# Asset Information card #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon"><i class="bi bi-cpu"></i></div>
+          <h2>{{ trans.asset_information }}</h2>
+        </div>
+        {% if asset.is_assigned %}
+          <span class="detail-status-badge badge-in-use">{{ trans.in_use }}</span>
+        {% elif asset.asset_status %}
+          <span class="detail-status-badge badge-available">{{ asset.asset_status.name }}</span>
+        {% endif %}
+      </div>
+      <div class="detail-card-body">
+        <div class="detail-fields-grid">
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.asset_tag }}</span>
+            <span class="detail-field-value"><span class="asset-tag-pill">{{ asset.tag }}</span></span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.asset_name }}</span>
+            <span class="detail-field-value fw-semibold">{{ asset.name|default:"—" }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.product }}</span>
+            <span class="detail-field-value">{{ asset.product|default:"—" }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.serial_number }}</span>
+            <span class="detail-field-value detail-mono">{{ asset.serial_no|default:"—" }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.purchase_price }}</span>
+            <span class="detail-field-value detail-price">
+              {% if asset.price %}
+                {% if get_currency %}{{ get_currency }} {% endif %}{{ asset.price }}
+              {% else %}—{% endif %}
+            </span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.warranty_expiry }}</span>
+            <span class="detail-field-value">
+              {% if asset.warranty_expiry_date %}
+                <span class="detail-warranty-ok"><i class="bi bi-shield-check"></i> {{ asset.warranty_expiry_date }}</span>
+              {% else %}—{% endif %}
+            </span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.end_of_life }}</span>
+            <span class="detail-field-value">{{ eol_date|default:"—" }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.assigned_to }}</span>
+            <span class="detail-field-value">
+              {% if assigned_user %}
+                <span class="detail-assignee-chip">
+                  <span class="detail-assignee-avatar">{{ assigned_user|slice:":2"|upper }}</span>
+                  <span>{{ assigned_user }}</span>
+                </span>
+              {% else %}<span class="text-muted">{{ trans.unassigned_label }}</span>{% endif %}
+            </span>
+          </div>
+
+          {% if assigned_asset %}
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.issue_date }}</span>
+            <span class="detail-field-value">{{ assigned_asset.issue_date|default:"—" }}</span>
+          </div>
+          {% endif %}
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.location }}</span>
+            <span class="detail-field-value">{{ asset.location.office_name|default:"—" }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.vendor }}</span>
+            <span class="detail-field-value">{{ asset.vendor|default:"—" }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.client }}</span>
+            <span class="detail-field-value">{{ asset.client.name|default:"—" }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.purchase_date }}</span>
+            <span class="detail-field-value">{{ asset.purchase_date|default:"—" }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-field-label">{{ trans.product_type }}</span>
+            <span class="detail-field-value">{{ asset.product.product_type|default:"—" }}</span>
+          </div>
+
+          {# Custom Fields #}
+          {% if cf_definitions|cf_has_any_value:cf_values %}
+          {% for defn in cf_definitions %}
+          {% if cf_values|get_cf_value:defn.field_key %}
+          <div class="detail-field">
+            <span class="detail-field-label">{{ defn.field_label }}</span>
+            <span class="detail-field-value">
+              {% if defn.field_type == 'boolean' %}
+                {% if cf_values|get_cf_value:defn.field_key == 'true' or cf_values|get_cf_value:defn.field_key == 'on' %}Yes{% else %}No{% endif %}
+              {% elif defn.field_type == 'url' %}
+                <a href="{{ cf_values|get_cf_value:defn.field_key }}" target="_blank">{{ cf_values|get_cf_value:defn.field_key }}</a>
+              {% else %}
+                {{ cf_values_formatted|get_cf_value:defn.field_key }}
+              {% endif %}
+            </span>
+          </div>
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+
+        </div>
+
+        {% if asset.description %}
+        <div class="detail-description-block">
+          <span class="detail-field-label">{{ trans.asset_description_notes }}</span>
+          <p class="detail-description-text">{{ asset.description|urlize }}</p>
+        </div>
+        {% endif %}
+
+        {% if assigned_asset.notes %}
+        <div class="detail-description-block">
+          <span class="detail-field-label">{{ trans.assignment_notes }}</span>
+          <p class="detail-description-text">{{ assigned_asset.notes|urlize }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+
+    {# Specifications #}
+    {% if assetSpecifications %}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon"><i class="bi bi-list-check"></i></div>
+          <h2>{{ trans.asset_specifications }}</h2>
+        </div>
+      </div>
+      <div class="detail-card-body p-0">
+        <table class="detail-specs-table">
+          <thead>
+            <tr><th>{{ trans.specification }}</th><th>{{ trans.value }}</th></tr>
+          </thead>
+          <tbody>
+            {% for spec in assetSpecifications %}
+            <tr><td>{{ spec.name }}</td><td>{{ spec.value }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Maintenance & Repairs #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon"><i class="bi bi-tools"></i></div>
+          <h2>{{ trans.maintenance_repairs|default:"Maintenance & Repairs" }}</h2>
+        </div>
+        <button type="button" class="btn-record-repair" data-bs-toggle="modal" data-bs-target="#recordRepairModal">
+          <i class="bi bi-plus-lg"></i> {{ trans.record_repair|default:"Record Repair" }}
+        </button>
+      </div>
+      <div class="detail-card-body p-0">
+        {% if maintenance_records %}
+        <table class="detail-audit-table">
+          <thead>
+            <tr>
+              <th>{{ trans.sl_no }}</th>
+              <th>{{ trans.service_id|default:"SERVICE ID" }}</th>
+              <th>{{ trans.date|default:"DATE" }}</th>
+              <th>{{ trans.type|default:"TYPE" }}</th>
+              <th>{{ trans.technician|default:"TECHNICIAN" }}</th>
+              <th>{{ trans.cost|default:"COST" }}</th>
+              <th>{{ trans.status|default:"STATUS" }}</th>
+              <th>{{ trans.actions_col|default:"ACTION" }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in maintenance_records %}
+            <tr>
+              <td><span class="detail-tag-inline">{{ forloop.counter }}</span></td>
+              <td><span class="service-id-link">{{ record.service_id }}</span></td>
+              <td>{{ record.date }}</td>
+              <td>
+                <span class="maintenance-type-badge type-{{ maintenance_type_labels|get_item:record.maintenance_type|default:record.maintenance_type|lower|slugify }}">
+                  {{ maintenance_type_labels|get_item:record.maintenance_type|default:record.maintenance_type }}
+                </span>
+              </td>
+              <td>{{ technician_map|get_item:record.technician|default:record.technician }}</td>
+              <td class="table-cost-cell">₹ {{ record.cost }}</td>
+              <td>
+                <span class="maintenance-status-badge status-{{ status_labels|get_item:record.status|default:record.status|lower|slugify }}">
+                  {{ status_labels|get_item:record.status|default:record.status }}
+                </span>
+              </td>
+              <td>
+                <button type="button" class="action-btn" title="{{ trans.edit }}" data-bs-toggle="modal" data-bs-target="#editMaintenanceModal{{ forloop.counter }}">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="detail-empty-state">
+    <i class="bi bi-tools d-block mb-2"></i>
+    <p>{{ trans.no_maintenance_records|default:"No maintenance records found for this asset." }}</p>
+</div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Audit History #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon"><i class="bi bi-clipboard-check"></i></div>
+          <h2>{{ trans.audit_history }}</h2>
+        </div>
+        {% if get_audit_history %}
+          <a href="{% url 'audit:get_audits_by_id' asset.id %}" class="detail-view-all">{{ trans.view_all_records }}</a>
+        {% endif %}
+      </div>
+      <div class="detail-card-body p-0">
+        {% if get_audit_history %}
+        <table class="detail-audit-table">
+          <thead>
+            <tr>
+              <th>{{ trans.sl_no }}</th>
+              <th>{{ trans.proof }}</th>
+              <th>{{ trans.condition }}</th>
+              <th>{{ trans.time }}</th>
+              <th>{{ trans.actions }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for audit in get_audit_history %}
+            <tr>
+              <td class="table-index-cell">{{ forloop.counter|stringformat:"02d" }}</td>
+              <td>
+                {% if audit.audit_image %}
+                  <img src="{{ audit.id|audit_image_url }}" class="audit-thumb" alt="Audit proof">
+                {% else %}
+                  <div class="audit-thumb-empty"><i class="bi bi-image"></i></div>
+                {% endif %}
+              </td>
+              <td>
+                <span class="audit-condition-badge audit-{{ audit.condition_label|lower|cut:' ' }}">
+                  ● {{ audit.condition_label }}
+                </span>
+              </td>
+              <td class="audit-date-cell">{{ audit.created_at }}</td>
+              <td>
+                <a href="{% url 'audit:details' audit.id %}" class="action-btn" title="View audit details">
+                  <i class="bi bi-eye"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="detail-empty-state">
+          <i class="bi bi-clipboard-x"></i>
+          <p>{{ trans.no_audit_records }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>{# /detail-main #}
+
+  {# ── Right / sidebar column ──────────────────────────────────────────────── #}
+  <div class="detail-sidebar">
+
+    {# Asset Images #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon"><i class="bi bi-images"></i></div>
+          <h2>{{ trans.asset_images_title }}</h2>
+        </div>
+      </div>
+      <div class="detail-card-body">
+        {% if get_asset_img %}
+          {% with first=get_asset_img|first %}
+            <div class="detail-main-image-wrap">
+              <img src="{% get_media_prefix %}{{ first.image }}"
+                   class="detail-main-image"
+                   alt="{{ asset.name }}"
+                   {% if arr_size > 1 %}
+                   data-bs-toggle="modal" data-bs-target="#imageCarouselModal"
+                   data-bs-slide-to="0"
+                   {% else %}
+                   data-bs-toggle="modal" data-bs-target="#imageModalSingle"
+                   {% endif %}
+                   onerror="this.onerror=null;this.src='{% static 'images/No_Image.jpg' %}';">
+            </div>
+          {% endwith %}
+          {% if arr_size > 1 %}
+          <div class="detail-thumb-row">
+            {% for it in get_asset_img %}{% if forloop.counter > 1 %}
+              {% if forloop.counter <= 3 %}
+                <img src="{% get_media_prefix %}{{ it.image }}"
+                     class="detail-thumb"
+                     alt="Image {{ forloop.counter }}"
+                     data-bs-toggle="modal"
+                     data-bs-target="#imageCarouselModal"
+                     data-bs-slide-to="{{ forloop.counter|add:'-1' }}"
+                     onerror="this.onerror=null;this.src='{% static 'images/No_Image.jpg' %}';">
+              {% elif forloop.counter == 4 %}
+                <button type="button"
+                        class="detail-thumb detail-thumb-more"
+                        data-bs-toggle="modal"
+                        data-bs-target="#imageCarouselModal"
+                        data-bs-slide-to="{{ forloop.counter|add:'-1' }}">
+                  +{{ arr_size|add:"-3" }} {{ trans.more }}
+                </button>
+              {% endif %}
+            {% endif %}{% endfor %}
+          </div>
+          {% endif %}
+        {% else %}
+          <div class="detail-main-image-wrap">
+            <img src="{% static 'images/No_Image.jpg' %}" class="detail-main-image" alt="No image available">
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Asset Identification — Barcode #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon"><i class="bi bi-upc-scan"></i></div>
+          <h2>{{ trans.asset_identification }}</h2>
+        </div>
+      </div>
+      <div class="detail-card-body">
+        <div class="detail-barcode-wrap">{{ asset_barcode|safe }}</div>
+        <div class="detail-barcode-tag-label">{{ asset.tag }}</div>
+        <div class="text-center mt-3">
+          <button id="download-btn" type="button" class="btn-download-label">
+            <i class="bi bi-download"></i> {{ trans.download_label_png }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {# Activity Log #}
+    {% if page_object %}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon"><i class="bi bi-clock-history"></i></div>
+          <h2>{{ trans.activity_log }}</h2>
+        </div>
+      </div>
+      <div class="detail-card-body p-0">
+        <ul class="activity-log-list">
+          {% for h in page_object %}
+          <li class="activity-log-item">
+            <div class="activity-dot
+              {% if h.history_type == '+' %}dot-create
+              {% elif h.history_type == '-' %}dot-delete
+              {% else %}dot-update{% endif %}">
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">
+                {% if h.history_type == '+' %}
+                  {{ trans.asset_created_in_system }}
+                {% elif h.history_type == '-' %}
+                  {{ trans.asset_deleted_activity }}
+                {% elif h.is_assigned != h.prev_record.is_assigned %}
+                  {% if h.is_assigned %}{{ trans.asset_assigned_to_user }}{% else %}{{ trans.asset_unassigned_activity }}{% endif %}
+                {% else %}
+                  {{ trans.asset_updated_activity }}
+                {% endif %}
+              </div>
+              <div class="activity-meta">
+                {{ h.history_date }}
+                {% if h.history_user %}&nbsp;· by {{ h.history_user.full_name|default:h.history_user }}{% endif %}
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Maintenance Log #}
+    <div class="detail-card">
+      <div class="detail-card-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="section-icon"><i class="bi bi-tools"></i></div>
+          <h2>{{ trans.maintenance_log|default:"Maintenance Log" }}</h2>
+        </div>
+      </div>
+      <div class="detail-card-body p-0">
+        {% if maintenance_history_entries %}
+        <ul class="activity-log-list">
+          {% for entry in maintenance_history_entries %}
+          <li class="activity-log-item">
+            <div class="activity-dot {% if entry.type == 'created' %}dot-create{% else %}dot-update{% endif %}"></div>
+            <div class="activity-content">
+              <div class="activity-title">
+                {% if entry.type == 'created' %}
+                  {{ entry.details }} {{ trans.recorded_for_asset }}
+                {% else %}
+                  {{ entry.details }} {{ trans.updated_for_asset }}
+                {% endif %}
+              </div>
+              <div class="activity-meta">
+                {{ entry.timestamp }}
+                {% if entry.user_id %}&nbsp;· by {{ technician_map|get_item:entry.user_id|default:entry.user_id }}{% endif %}
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="detail-empty-state">
+          <i class="bi bi-tools d-block mb-2"></i>
+          <p>{{ trans.no_maintenance_log|default:"No maintenance recorded" }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>{# /detail-sidebar #}
+
+</div>{# /detail-layout #}
+
+{# ── Image modals ──────────────────────────────────────────────────────────── #}
+{% if arr_size == 1 %}
+{% for it in get_asset_img %}
+  {% if it.image %}
+  <div class="modal fade" id="imageModalSingle" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ trans.image }} 1 {{ trans.of_label }} {{ arr_size }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ trans.close_modal }}"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img src="{% get_media_prefix %}{{ it.image }}"
+               alt="Asset Image"
+               class="detail-modal-image"
+               onerror="this.onerror=null;this.src='{% static 'images/No_Image.jpg' %}';">
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+{% endfor %}
+{% endif %}
+
+{# ──── Image Modal For Remaining Images ────────────────────────────────────────────────────── #}
+<!-- arr_size|add:"-3"  is thew starting index or the index that will open first. But we can view all the images if we want to -->
+<!-- {% if arr_size > 3 %}
+<div class="modal fade" id="imageCarouselModal{{ forloop.counter }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Image {{ forloop.counter }} of {{ arr_size }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div id="carouselExampleControls" class="carousel{{ forloop.counter }} slide" data-bs-ride="carousel">
+
+          <div class="carousel-inner">
+            {% for it in get_asset_img %}
+              {% if it.image %}
+              <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                <img src="{% get_media_prefix %}{{ it.image }}"
+                     class="d-block w-100 detail-modal-image"
+                     style="max-height:70vh; object-fit:contain;"
+                     onerror="this.onerror=null;this.src='{% static 'images/No_Image.jpg' %}';">
+              </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <button class="carousel-control-prev" type="button"
+                  data-bs-target="#carouselExampleControls"
+                  data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+          </button>
+
+          <button class="carousel-control-next" type="button"
+                  data-bs-target="#carouselExampleControls"
+                  data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %} -->
+{% if arr_size > 1 %}
+<div class="modal fade" id="imageCarouselModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ trans.image }} <span id="carouselImageCounter">1</span> {{ trans.of_label }} {{ arr_size }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ trans.close_modal }}"></button>
+      </div>
+      <div class="modal-body">
+        <div id="carouselMain" class="carousel slide" data-bs-ride="false">
+          <div class="carousel-inner">
+            {% for it in get_asset_img %}
+              {% if it.image %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                  <img src="{% get_media_prefix %}{{ it.image }}"
+                       class="detail-modal-image"
+                       onerror="this.onerror=null;this.src='{% static 'images/No_Image.jpg' %}';">
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <!-- Prev -->
+          <button class="carousel-control-prev" type="button"
+                  data-bs-target="#carouselMain"
+                  data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+          </button>
+
+          <!-- Next -->
+          <button class="carousel-control-next" type="button"
+                  data-bs-target="#carouselMain"
+                  data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var carouselEl = document.getElementById('carouselMain');
+  if (carouselEl) {
+    var counterEl = document.getElementById('carouselImageCounter');
+    var totalImages = {{ arr_size }};
+
+    carouselEl.addEventListener('slide.bs.carousel', function(e) {
+      if (counterEl) {
+        var currentIndex = e.to + 1;
+        counterEl.textContent = currentIndex;
+      }
+    });
+  }
+});
+</script>
+{# ── Record Repair Modal ────────────────────────────────────────────────── #}
+<div class="modal fade" id="recordRepairModal" tabindex="-1" aria-hidden="true" data-preserve-content>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-tools text-primary me-2"></i> {{ trans.record_repair|default:"Record Maintenance / Repair" }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ trans.close_modal }}"></button>
+      </div>
+      <form action="{% url 'assets:record_repair' asset.id %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-muted text-uppercase">{{ trans.maintenance_date|default:"Date" }}</label>
+              {{ maintenance_form.date }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-muted text-uppercase">{{ trans.maintenance_type|default:"Type" }}</label>
+              {{ maintenance_form.maintenance_type }}
+            </div>
+            <div class="col-md-12">
+              <label class="form-label fw-semibold small text-muted text-uppercase">{{ trans.technician|default:"Technician" }}</label>
+              {{ maintenance_form.technician }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-muted text-uppercase">{{ trans.maintenance_cost|default:"Cost" }}</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light">INR</span>
+                {{ maintenance_form.cost }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-muted text-uppercase">{{ trans.maintenance_status|default:"Status" }}</label>
+              {{ maintenance_form.status }}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-link text-muted text-decoration-none fw-semibold" data-bs-dismiss="modal">{{ trans.cancel|default:"Cancel" }}</button>
+          <button type="submit" class="btn btn-primary px-4 fw-semibold">{{ trans.save_record|default:"Save Record" }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ── Edit Maintenance Modals ───────────────────────────────────────────── #}
+{% for record in maintenance_records %}
+<div class="modal fade" id="editMaintenanceModal{{ forloop.counter }}" tabindex="-1" aria-hidden="true" data-preserve-content>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-pencil text-primary me-2"></i> {{ trans.edit_maintenance|default:"Edit Maintenance" }} — {{ record.service_id }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ trans.close_modal }}"></button>
+      </div>
+      <form action="{% url 'assets:edit_maintenance' record.id %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-12">
+              <label class="form-label fw-semibold small text-muted text-uppercase">{{ trans.technician|default:"Technician" }}</label>
+              <select name="technician" class="form-select edit-tech-select" required>
+                <option value="">{{ trans.select_technician|default:"Select Technician" }}</option>
+                {% for uid, name in maintenance_form.technician.field.choices %}
+                  {% if uid %}
+                <option value="{{ uid }}" {% if uid == record.technician %}selected{% endif %}>{{ name }}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label fw-semibold small text-muted text-uppercase">{{ trans.maintenance_status|default:"Status" }}</label>
+              <select name="status" class="form-select">
+                <option value="1" {% if record.status == '1' %}selected{% endif %}>{{ status_labels|get_item:'1' }}</option>
+                <option value="2" {% if record.status == '2' %}selected{% endif %}>{{ status_labels|get_item:'2' }}</option>
+                <option value="3" {% if record.status == '3' %}selected{% endif %}>{{ status_labels|get_item:'3' }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-0">
+          <button type="button" class="btn btn-link text-muted text-decoration-none fw-semibold" data-bs-dismiss="modal">{{ trans.cancel|default:"Cancel" }}</button>
+          <button type="submit" class="btn btn-primary px-4 fw-semibold">{{ trans.update|default:"Update" }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+$(document).ready(function() {
+  var $recordRepairModal = $('#recordRepairModal');
+  var $techSelect = $('#id_technician');
+
+  // Select2 itself is initialized globally by static/js/select2-init.js
+  // (with dropdownParent auto-set to the enclosing modal).
+  $recordRepairModal.on('shown.bs.modal', function () {
+    $techSelect.val(null).trigger('change');
+  });
+});
+</script>
+
+{% endblock content %}

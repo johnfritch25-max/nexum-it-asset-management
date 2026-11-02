@@ -1,0 +1,156 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+{% load custom_filters %}
+{% load cf_tags %}
+
+{% block title %}{{ trans.vendor_details }} - {{ vendor.name }} | Asseto{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/vendor-details.css' %}?v=1.2">
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/assets/assets-common.css' %}">
+<style>
+    /* Pagination overrides for this page */
+    .pagination .page-link {
+        background-color: var(--color-card) !important;
+        border: 1px solid var(--color-border) !important;
+        color: var(--color-text);
+    }
+    .pagination .active .page-link {
+        background-color: var(--color-primary) !important;
+        color: white !important;
+        border: none;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="vendor-details-container">
+    {# ── Page header ───────────────────────────────────────────────────────── #}
+    <div class="list-page-header">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb page-breadcrumb">
+            <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">{{ trans.dashboard }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'vendors:list' %}" class="breadcrumb-link">{{ trans.vendors }}</a></li>
+            <li class="breadcrumb-item active">{{ vendor.name }}</li>
+          </ol>
+        </nav>
+        <h1>{{ vendor.name }}</h1>
+        <p class="page-subtitle">{{ trans.vendor_detail_subtitle }}</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'vendors:list' %}" class="btn-back">
+          <i class="bi bi-arrow-left"></i> {{ trans.back_to_listing }}
+        </a>
+        <a href="{% url 'vendors:update_vendor' vendor.id %}" class="btn-update">
+          <i class="bi bi-pencil"></i> {{ trans.update_vendor }}
+        </a>
+      </div>
+    </div>
+
+    {# ── Vendor Information Card ───────────────────────────────────────────── #}
+    <div class="info-card">
+        <div class="card-header-custom">
+            <i class="bi bi-person-badge"></i>
+            <h2><span>{{ trans.vendor_information }}</span></h2>
+        </div>
+        <div class="info-grid">
+            {# Row 1 #}
+            <div class="info-item">
+                <span class="label">{{ trans.phone_label }}</span>
+                <span class="value">{{ vendor.phone|default:"-" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">{{ trans.email_label }}</span>
+                <span class="value">{{ vendor.email|default:"-" }}</span>
+            </div>
+
+            {# Row 2 #}
+            <div class="info-item">
+                <span class="label">{{ trans.designation_label }}</span>
+                <span class="value">{{ vendor.designation|default:"-" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">{{ trans.contact_person }}</span>
+                <span class="value">{% if vendor.contact_person %}{{ vendor.contact_person }}{% else %}-{% endif %}</span>
+            </div>
+
+            {# Row 3 #}
+            <div class="info-item">
+                <span class="label">{{ trans.address_label }}</span>
+                <span class="value">{{ vendor.address.address_line_one|default:"-" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">{{ trans.gstin_number_label }}</span>
+                <span class="value">{{ vendor.gstin_number|default:"-" }}</span>
+            </div>
+
+            {# Row 4 #}
+            <div class="info-item">
+                <span class="label">{{ trans.vendor_state_label }}</span>
+                <span class="value">{{ vendor.address.state|default:"-" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">{{ trans.country_label }}</span>
+                <span class="value">{{ vendor.address.country|default:"-" }}</span>
+            </div>
+
+            {# Custom Fields #}
+            {% if cf_definitions|cf_has_any_value:cf_values %}
+            {% for defn in cf_definitions %}
+            {% if cf_values|get_cf_value:defn.field_key %}
+            <div class="info-item">
+                <span class="label">{{ defn.field_label }}</span>
+                <span class="value">
+                    {% if defn.field_type == 'boolean' %}
+                        {% if cf_values|get_cf_value:defn.field_key == 'true' or cf_values|get_cf_value:defn.field_key == 'on' %}Yes{% else %}No{% endif %}
+                    {% elif defn.field_type == 'url' %}
+                        <a href="{{ cf_values|get_cf_value:defn.field_key }}" target="_blank">{{ cf_values|get_cf_value:defn.field_key }}</a>
+                    {% else %}
+                        {{ cf_values|get_cf_value:defn.field_key }}
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+
+            {# Description - Full Width #}
+            <div class="info-item full-width">
+                <span class="label">{{ trans.description_label }}</span>
+                <div class="value">{{ vendor.description|default:trans.no_description_available|urlize }}</div>
+            </div>
+
+            {# Row 5 #}
+            <div class="info-item">
+                <span class="label">{{ trans.city_label }}</span>
+                <span class="value">{{ vendor.address.city|default:"-" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">{{ trans.zip_code_label }}</span>
+                <span class="value">{{ vendor.address.pin_code|default:"-" }}</span>
+            </div>
+        </div>
+    </div>
+
+
+
+    {# ── Asset List ────────────────────────────────────────────────────────── #}
+    {% if assets_page_object %}
+    <div class="table-card mb-4">
+        <div class="card-header-custom">
+            <i class="bi bi-box-seam"></i>
+            <h2><span>{{ trans.asset_list }}</span></h2>
+        </div>
+        {% include 'commons/assets-table.html' %}
+        {% include 'commons/list-pagination.html' with page_object=assets_page_object page_var='asset_page' %}
+    </div>
+    {% endif %}
+
+    {# ── History Section ───────────────────────────────────────────────────── #}
+    <div class="mt-4">
+        {% include 'commons/history.html' %}
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,115 @@
+<div class="upload-modal-content">
+    <div class="upload-modal-header">
+        <h5 class="modal-title"><i class="bi bi-box-seam"></i> Map CSV Fields to Product Type Fields</h5>
+        <button type="button" class="upload-btn-close" data-bs-dismiss="modal" aria-label="Close">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <form method="post" action="{% url 'upload:product_type_compare_data' %}" id="mappingForm">
+        {% csrf_token %}
+        <div class="upload-modal-body">
+            <table class="upload-mapping-table">
+                <thead>
+                    <tr>
+                        <th>Product Type Field</th>
+                        <th>CSV Header</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for field in fields %}
+                    <tr>
+                        <td>
+                            {{ field }}
+
+                            {% if field in required_fields %}
+                            <span class="text-danger">*</span>
+                            <div class="text-danger small mt-1 d-none" id="error-{{ forloop.counter }}">
+                                This field is required
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <select name="mapping_{{ field }}" class="form-select mapping-select"
+                                data-error-id="error-{{ forloop.counter }}"
+                                {% if field in required_fields %}data-required="true" {% endif %}>
+                                <option value="">-- Select --</option>
+                                {% for header in headers %}
+                                <option value="{{ header }}">{{ header }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="upload-modal-footer">
+            <button type="button" class="btn-cancel" data-bs-dismiss="modal">
+                <i class="bi bi-x-lg"></i> Close
+            </button>
+            <button type="submit" class="btn-save" id="importBtn" disabled>
+                <i class="bi bi-check-lg"></i> Import Product Types
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        const form = document.getElementById("mappingForm");
+        const importBtn = document.getElementById("importBtn");
+        const selects = document.querySelectorAll(".mapping-select");
+
+        function hasAnySelection() {
+            return Array.from(selects).some(s => s.value !== "");
+        }
+
+        function allRequiredSelected() {
+            return Array.from(selects).every(select => {
+                if (select.dataset.required === "true") {
+                    return select.value !== "";
+                }
+                return true;
+            });
+        }
+
+        function validateRequiredFields(showErrors = false) {
+            let isValid = true;
+
+            selects.forEach(select => {
+                if (select.dataset.required === "true") {
+                    const errorDiv = document.getElementById(select.dataset.errorId);
+
+                    if (select.value === "") {
+                        isValid = false;
+                        if (showErrors) errorDiv.classList.remove("d-none");
+                    } else {
+                        errorDiv.classList.add("d-none");
+                    }
+                }
+            });
+
+            return isValid;
+        }
+
+        function updateButtonState() {
+            importBtn.disabled = !(hasAnySelection() && allRequiredSelected());
+        }
+
+        selects.forEach(select => {
+            select.addEventListener("change", () => {
+                validateRequiredFields(false);
+                updateButtonState();
+            });
+        });
+
+        form.addEventListener("submit", function (e) {
+            if (!validateRequiredFields(true)) {
+                e.preventDefault();
+            }
+        });
+
+        updateButtonState();
+    })();
+</script>

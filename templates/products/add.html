@@ -1,0 +1,180 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+
+{% block title %}{{ trans.add_product_page }} | Asseto{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/add-product.css' %}?v=1.2">
+<style>
+    #imagePreview img {
+        margin-top: 10px;
+        border: 2px solid var(--color-border);
+        padding: 4px;
+        background: white;
+    }
+    body.theme-dark #imagePreview img {
+        background: #1E1E2D;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="add-product-container">
+    {# ── Page header ───────────────────────────────────────────────────────── #}
+    <div class="add-page-header">
+      <div>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb page-breadcrumb">
+            <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">{{ trans.dashboard }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'products:list' %}" class="breadcrumb-link">{{ trans.products }}</a></li>
+            <li class="breadcrumb-item active">{{ trans.add_product }}</li>
+          </ol>
+        </nav>
+        <h1>{{ trans.add_product_page }}</h1>
+        <p class="subtitle">{{ trans.product_add_subtitle }}</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'products:list' %}" class="btn-back-listing">
+          <i class="bi bi-arrow-left"></i> {{ trans.back_to_listing }}
+        </a>
+        <button type="submit" form="product-form" class="btn-save-asset">
+          <i class="bi bi-floppy2"></i> {{ trans.save }}
+        </button>
+      </div>
+    </div>
+
+    {# ── Form Card ─────────────────────────────────────────────────────────── #}
+    <div class="form-card">
+        <form method="post" id="product-form" novalidate enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {# ── Section 1: Basic Information ────────────────────────────────── #}
+            <div class="form-section">
+                <div class="section-header">
+                    <i class="bi bi-box-seam"></i> <span>{{ trans.basic_information }}</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.name.id_for_label }}">{{ trans.product_name_label }} <span class="required">*</span></label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.product_type.id_for_label }}">{{ trans.product_type_label }} <span class="required">*</span></label>
+                        {{ form.product_type }}
+                        {% if form.product_type.errors %}<div class="text-danger small mt-1">{{ form.product_type.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.product_category.id_for_label }}">{{ trans.product_category_label }} <span class="required">*</span></label>
+                        {{ form.product_category }}
+                        {% if form.product_category.errors %}<div class="text-danger small mt-1">{{ form.product_category.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.product_sub_category.id_for_label }}">{{ trans.product_sub_category_label }}</label>
+                        {{ form.product_sub_category }}
+                        {% if form.product_sub_category.errors %}<div class="text-danger small mt-1">{{ form.product_sub_category.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# ── Section 2: Product Details ────────────────────────────────── #}
+            <div class="form-section">
+                <div class="section-header">
+                    <i class="bi bi-info-circle"></i> <span>{{ trans.product_details_section }}</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="{{ form.manufacturer.id_for_label }}">{{ trans.manufacturer_label }}</label>
+                        {{ form.manufacturer }}
+                        {% if form.manufacturer.errors %}<div class="text-danger small mt-1">{{ form.manufacturer.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.model.id_for_label }}">{{ trans.model_label }}</label>
+                        {{ form.model }}
+                        {% if form.model.errors %}<div class="text-danger small mt-1">{{ form.model.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.eol.id_for_label }}">{{ trans.product_eol_label }}</label>
+                        {{ form.eol }}
+                        {% if form.eol.errors %}<div class="text-danger small mt-1">{{ form.eol.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ trans.audit_interval_label }}</label>
+                        <select class="form-control" name="audit_interval">
+                            <option value="1">{{ trans.yearly }}</option>
+                            <option value="2">{{ trans.half_yearly }}</option>
+                            <option value="3">{{ trans.quarterly }}</option>
+                            <option value="4">{{ trans.bi_monthly }}</option>
+                            <option value="4">{{ trans.monthly }}</option>
+                            <option value="5">{{ trans.not_applicable }}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {# ── Section 3: Description & Image ──────────────────────────────── #}
+            <div class="form-section">
+                <div class="section-header">
+                    <i class="bi bi-file-earmark-text"></i> <span>{{ trans.description_image_section }}</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="{{ form.description.id_for_label }}">{{ trans.description_label }}</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ image_form.image.id_for_label }}">{{ trans.product_image_label }}</label>
+                        {{ image_form.image }}
+                        <div id="imagePreview"></div>
+                        {% if image_form.image.errors %}<div class="text-danger small mt-1">{{ image_form.image.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# ── Section 4: Custom Fields ──────────────────────────────────────── #}
+            {% include "custom_fields/_cf_fields_block.html" %}
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#id_product_category').on('change', function () {
+            const categoryId = $(this).val();
+            const $subCatSelect = $('#id_product_sub_category');
+            if (!categoryId) {
+                $subCatSelect.html('<option value="">--SELECT--</option>');
+                return;
+            }
+            $subCatSelect.html('<option value="">Loading...</option>');
+            fetch(`/admin/get-subcategories/?category_id=${categoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    let options = '<option value="">--SELECT--</option>';
+                    data.forEach(function (item) {
+                        options += `<option value="${item.id}">${item.name}</option>`;
+                    });
+                    $subCatSelect.html(options);
+                })
+                .catch(() => {
+                    $subCatSelect.html('<option value="">Error loading</option>');
+                });
+        });
+
+        $("#id_image").on('change', function () {
+            const input = this;
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    $("#imagePreview").html('<img src="' + e.target.result + '" class="rounded" width="100" height="80"/>');
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                $("#imagePreview").html('');
+            }
+        });
+    });
+</script>
+{% endblock content %}

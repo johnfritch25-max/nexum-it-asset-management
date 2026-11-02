@@ -1,0 +1,58 @@
+{% autoescape off %}
+<style>
+    th,
+    td {
+        text-align: center;
+        width: 100%;
+        padding: 3px;
+        background-color: #d6eeee;
+        border-bottom: 2px solid white;
+    }
+    th {
+        background-color: rgb(65, 65, 192);
+        color: white;
+    }
+    @page {
+        size: letter landscape;
+        margin: 0.5cm;
+    }
+</style>
+<table style="width: 100%">
+    <thead>
+        <tr>
+            <th>{{ trans.sl_no }}</th>
+            <th>{{ trans.id_label }}</th>
+            <th>{{ trans.name_label }}</th>
+            <th>{{ trans.industry }}</th>
+            <th>{{ trans.contact_person }}</th>
+            <th>{{ trans.email_label }}</th>
+            <th>{{ trans.phone_no }}</th>
+            <th>{{ trans.total_assets_client }}</th>
+            <th>{{ trans.open_tickets_client }}</th>
+            <th>{{ trans.status_label }}</th>
+        </tr>
+    </thead>
+    {% if clients %}
+    <tbody>
+        {% for client in clients %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ client.client_id }}</td>
+            <td>{{ client.name }}</td>
+            <td>{{ client.industry_name }}</td>
+            <td>{% with contact=client.contacts.first %}{{ contact.name|default:"" }}{% endwith %}</td>
+            <td>{% with contact=client.contacts.first %}{{ contact.email|default:"" }}{% endwith %}</td>
+            <td>{% with contact=client.contacts.first %}{{ contact.phone|default:"" }}{% endwith %}</td>
+            <td>{{ client.asset_count }}</td>
+            <td>{{ client.open_tickets_count }}</td>
+            <td>{{ client.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    {% else %}
+    <tr>
+        <td colspan="10">{{ trans.no_record_available }}</td>
+    </tr>
+    {% endif %}
+</table>
+{% endautoescape %}

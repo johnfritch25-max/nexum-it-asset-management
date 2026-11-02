@@ -1,0 +1,632 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Update Ticket - #{{ ticket.ticket_id }} | Asseto{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/assets/assets-common.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/assets/assets-form.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/support-tickets.css' %}">
+{% endblock css %}
+
+
+{% block content %}
+<form class="form" method="POST" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  {# ── Form Errors ──────────────────────────────────────── #}
+  {% if form.errors %}
+  <div class="alert alert-danger mx-4 mt-4">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
+      <strong>{{ trans.correct_errors_below }}</strong>
+    </div>
+    {% if form.non_field_errors %}
+    <ul class="mb-0 mt-2">
+      {% for error in form.non_field_errors %}
+      <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% for field in form %}
+    {% if field.errors %}
+    <ul class="mb-0 mt-2">
+      {% for error in field.errors %}
+      <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="add-page-header">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb page-breadcrumb">
+          <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">{{ trans.dashboard }}</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'support:ticket_list' %}" class="breadcrumb-link">{{ trans.tickets_breadcrumb }}</a></li>
+          <li class="breadcrumb-item active">Update Ticket</li>
+        </ol>
+      </nav>
+      <h1>Update Ticket - #{{ ticket.ticket_id }}</h1>
+      <p class="subtitle">Update the details of this support ticket</p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <a href="{% url 'support:ticket_list' %}" class="btn-back-listing">
+        {{ trans.cancel }}
+      </a>
+      <button type="submit" class="btn-save-asset">
+        <i class="bi bi-check-all"></i> {{ trans.update_ticket_btn }}
+      </button>
+    </div>
+
+  </div>
+
+  {# ── Two-column layout ────────────────────────────────── #}
+  <div class="row g-4">
+
+    {# ── LEFT COLUMN ──────────────────────────────────── #}
+    <div class="col-lg-8">
+
+      {# Primary Details #}
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon"><i class="bi bi-info-circle-fill"></i></div>
+          <h2>{{ trans.primary_details }}</h2>
+        </div>
+        <div class="section-body">
+          <div class="row g-3">
+
+
+            <div class="col-12">
+              <label class="field-label">{{ trans.target_asset }} <span class="required">*</span></label>
+              <div style="position: relative;">
+                <!-- Visible Search Input -->
+                <input type="text" id="asset-search-input" class="field-input"
+                  placeholder="{{ trans.search_asset_placeholder }}" autocomplete="off" required>
+
+                <!-- Hidden Actual Select -->
+                {{ form.asset }}
+
+                <!-- Suggestions -->
+                <ul id="asset-suggestions" class="audit-suggestions" style="
+                  max-height: 400px;
+                  overflow-y: auto;
+                  z-index: 9999;
+                  position: absolute;
+                  width: 100%;
+                  display: none;
+                  background: white;
+                  border: 1px solid #e0e0e0;
+                  border-radius: 10px;
+                  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+                  padding: 0;
+                  margin: 0;
+                  list-style: none;
+                "></ul>
+              </div>
+              {% for error in form.asset.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+
+            <div class="col-12">
+              <label class="field-label">{{ trans.subject_issue_summary }} <span class="required">*</span></label>
+              {{ form.subject }}
+              {% for error in form.subject.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+
+            <div class="col-12 mt-2">
+              <label class="field-label">{{ trans.issue_priority }} <span class="required">*</span></label>
+              {{ form.priority }}
+              {% for error in form.priority.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+              <div class="selector-group mt-2" id="priority-selector">
+                <div class="selector-btn" data-value="3"><i class="bi bi-exclamation-circle-fill me-2"></i> {{ trans.emergency }}
+                </div>
+                <div class="selector-btn" data-value="2"><i class="bi bi-exclamation-triangle-fill me-2"></i> {{ trans.high }}</div>
+                <div class="selector-btn" data-value="1"><i class="bi bi-info-circle-fill me-2"></i> {{ trans.medium }}</div>
+                <div class="selector-btn" data-value="0"><i class="bi bi-sliders me-2"></i> {{ trans.low }}</div>
+              </div>
+            </div>
+
+            <div class="col-12 mt-3">
+              <label class="field-label">{{ trans.detailed_description }}</label>
+              {{ form.description }}
+              {% for error in form.description.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Work Details #}
+      <div class="form-section">
+        <div class="section-header">
+          <div class="section-icon"><i class="bi bi-tools"></i></div>
+          <h2>{{ trans.work_details }}</h2>
+        </div>
+        <div class="section-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="field-label">{{ trans.ticket_type }}</label>
+              {{ form.ticket_type }}
+              {% for error in form.ticket_type.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="field-label">{{ trans.estimated_eta }}</label>
+              {{ form.estimated_eta }}
+              {% for error in form.estimated_eta.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label class="field-label">{{ trans.hours_worked }}</label>
+              {{ form.hours_worked }}
+              {% for error in form.hours_worked.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="col-12 mt-3">
+              <label class="field-label">{{ trans.impact_level }}</label>
+              {{ form.impact_level }}
+              {% for error in form.impact_level.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+              <div class="selector-group mt-2" id="impact-selector">
+                <div class="selector-btn" data-value="0">{{ trans.low }}</div>
+                <div class="selector-btn" data-value="1">{{ trans.medium }}</div>
+                <div class="selector-btn" data-value="2">{{ trans.high }}</div>
+                <div class="selector-btn" data-value="3">{{ trans.critical }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+    </div>{# /col-lg-8 #}
+
+    {# ── RIGHT SIDEBAR ────────────────────────────────── #}
+    <div class="col-lg-4">
+
+      {# Ticket Status #}
+      <div class="sidebar-section">
+        <div class="sidebar-section-header"><span>{{ trans.ticket_status }}</span></div>
+        <div class="sidebar-body">
+          <label class="field-label small">{{ trans.current_status }}</label>
+          {{ form.status }}
+          {% for error in form.status.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          <div class="selector-group mt-2 status-selector-group" id="status-selector">
+            <div class="selector-btn" data-value="0"><i class="bi bi-envelope d-block mb-1"></i>{{ trans.open_status }}</div>
+            <div class="selector-btn" data-value="1"><i class="bi bi-gear d-block mb-1"></i>{{ trans.in_progress_status }}</div>
+            <div class="selector-btn" data-value="2"><i class="bi bi-eye d-block mb-1"></i>{{ trans.in_testing_status }}</div>
+            <div class="selector-btn" data-value="3"><i class="bi bi-check-circle d-block mb-1"></i>{{ trans.resolved_status }}</div>
+            <div class="selector-btn" data-value="4"><i class="bi bi-lock d-block mb-1"></i>{{ trans.closed_status }}</div>
+          </div>
+        </div>
+      </div>
+
+      {# Resolution Routing #}
+      <div class="sidebar-section" style="overflow: visible;">
+        <div class="sidebar-section-header"><span>{{ trans.resolution_routing }}</span></div>
+        <div class="sidebar-body">
+          <label class="field-label small">{{ trans.assign_technician }}</label>
+          <div style="position: relative;">
+            <!-- Visible Search Input -->
+            <input type="text" id="assigned-search-input" class="field-input" placeholder="{{ trans.search_technician_placeholder }}"
+              autocomplete="off">
+
+            <!-- Hidden Actual Select -->
+            {{ form.assigned_to }}
+
+            <!-- Suggestions -->
+            <ul id="assigned-suggestions" class="audit-suggestions" style="
+              max-height: 400px;
+              overflow-y: auto;
+              z-index: 9999;
+              position: absolute;
+              width: 100%;
+              display: none;
+              background: white;
+              border: 1px solid #e0e0e0;
+              border-radius: 10px;
+              box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+              padding: 0;
+              margin: 0;
+              list-style: none;
+            "></ul>
+          </div>
+          {% for error in form.assigned_to.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+          <div class="compliance-box mt-3">
+            <i class="bi bi-lightbulb"></i>
+            <p>
+              <strong>{{ trans.handover_note }}</strong>
+              {{ trans.handover_note_body }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {# Attachments #}
+      <div class="sidebar-section">
+        <div class="sidebar-section-header"><span>{{ trans.attachments }}</span></div>
+        <div class="sidebar-body">
+          <div class="upload-area" id="upload-drop-area">
+            <input type="file" name="attachments" multiple id="ticket-file-input">
+            <i class="bi bi-cloud-arrow-up d-block"></i>
+            <div class="upload-label">{{ trans.drop_images_here }}</div>
+            <div class="upload-hint">{{ trans.upload_hint }}</div>
+          </div>
+          <div id="file-list" class="mt-3 text-start small"></div>
+
+          {% if ticket.attachments.all %}
+          <div class="mt-4">
+            <label class="field-label small d-block mb-2">{{ trans.existing_attachments }}</label>
+            <div class="list-group list-group-flush border rounded">
+              {% for att in ticket.attachments.all %}
+              <div class="list-group-item d-flex align-items-center justify-content-between small py-2">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-file-earmark-check me-2 text-success"></i>
+                  <a href="{{ att.file.url }}" target="_blank" class="text-truncate text-decoration-none text-dark"
+                    style="max-width: 150px;">{{ att.file_name }}</a>
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm border-0 py-0 px-1" title="{{ trans.delete_attachment }}"
+                  onclick="if(confirm('{{ trans.delete_attachment_confirm }}')) { location.href='{% url 'support:ticket_attachment_delete' att.id %}' }">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <p class="required-note mt-3">
+        <span class="required-star">*</span> {{ trans.required_field }}
+      </p>
+
+      <input type="hidden" name="happy_code" id="happyCodeHiddenInput" value="">
+
+    </div>{# /col-lg-4 #}
+  </div>{# /row #}
+
+</form>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // ── Priority & Impact Selectors ────────────────────────────────────────
+    function setupSelector(groupId, inputName) {
+      const group = document.getElementById(groupId);
+      if (!group) return;
+
+      const input = document.querySelector(`input[name="${inputName}"]`);
+      if (!input) return;
+
+      const buttons = group.querySelectorAll('.selector-btn');
+
+      // Set active state based on initial value
+      const initialValue = input.value;
+      if (initialValue) {
+        buttons.forEach(btn => {
+          if (btn.getAttribute('data-value') === initialValue) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+      }
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          buttons.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          input.value = this.getAttribute('data-value');
+        });
+      });
+    }
+
+    setupSelector('priority-selector', 'priority');
+    setupSelector('impact-selector', 'impact_level');
+    setupSelector('status-selector', 'status');
+
+    // ── File Upload Logic ─────────────────────────────────────────────────
+    const fileInput = document.getElementById('ticket-file-input');
+    const fileList = document.getElementById('file-list');
+
+    if (fileInput) {
+      fileInput.addEventListener('change', () => {
+        fileList.innerHTML = '';
+        Array.from(fileInput.files).forEach(file => {
+          const div = document.createElement('div');
+          div.className = 'p-2 border-bottom d-flex align-items-center';
+          div.innerHTML = `<i class="bi bi-file-earmark me-2 text-primary"></i> ${file.name}`;
+          fileList.appendChild(div);
+        });
+      });
+    }
+
+    // ── Common Search Suggestion Handler ──────────────────────────────────
+    function setupSearch(inputEl, suggestionsEl, selectEl, searchUrl, resultFormatter, clickHandler) {
+      let debounceTimer;
+
+      function fetchResults(query) {
+        fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
+          .then(response => response.json())
+          .then(data => {
+            suggestionsEl.innerHTML = '';
+            if (data.results && data.results.length > 0) {
+              data.results.forEach(item => {
+                const li = document.createElement('li');
+                li.classList.add('audit-suggestion-item');
+                li.innerHTML = resultFormatter(item);
+                li.addEventListener('click', () => clickHandler(item, inputEl, selectEl, suggestionsEl));
+                suggestionsEl.appendChild(li);
+              });
+              suggestionsEl.style.display = 'block';
+            } else {
+              if (query) {
+                suggestionsEl.innerHTML = '<li class="p-3 text-center text-muted small">{{ trans.no_results_found }}</li>';
+                suggestionsEl.style.display = 'block';
+              } else {
+                suggestionsEl.style.display = 'none';
+              }
+            }
+          })
+          .catch(err => console.error('Search error:', err));
+      }
+
+      inputEl.addEventListener('input', function () {
+        const query = this.value.trim();
+        clearTimeout(debounceTimer);
+        if (query.length < 1) {
+          suggestionsEl.innerHTML = '';
+          suggestionsEl.style.display = 'none';
+          return;
+        }
+        debounceTimer = setTimeout(() => fetchResults(query), 300);
+      });
+
+      inputEl.addEventListener('focus', function () {
+        if (this.value.trim().length === 0) fetchResults('');
+        else if (suggestionsEl.children.length > 0) suggestionsEl.style.display = 'block';
+      });
+
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest(`#${inputEl.id}`) && !e.target.closest(`#${suggestionsEl.id}`)) {
+          suggestionsEl.style.display = 'none';
+        }
+      });
+    }
+
+    // ── Setup Asset Search ────────────────────────────────────────────────
+    const assetInput = document.getElementById('asset-search-input');
+    const assetSuggestions = document.getElementById('asset-suggestions');
+    const assetSelect = document.getElementById('id_asset');
+
+    // Pre-fill if editing
+    if (assetSelect.value) {
+      const selectedText = assetSelect.options[assetSelect.selectedIndex].text;
+      assetInput.value = selectedText;
+    }
+
+    setupSearch(
+      assetInput,
+      assetSuggestions,
+      assetSelect,
+      '/support/asset-search/',
+      (item) => `
+        <div class="suggestion-info">
+          <span class="suggestion-name">${item.name}</span>
+            <span class="suggestion-tag">${item.tag || '{{ trans.no_tag }}'}</span>
+        </div>
+      `,
+      (item, input, select, suggs) => {
+        input.value = `${item.name} (${item.tag})`;
+        let option = Array.from(select.options).find(opt => opt.value === item.id);
+        if (!option) {
+          option = new Option(item.name, item.id);
+          select.add(option);
+        }
+        select.value = item.id;
+        suggs.style.display = 'none';
+      }
+    );
+
+    // ── Setup Technician Search ───────────────────────────────────────────
+    const assignedInput = document.getElementById('assigned-search-input');
+    const assignedSuggestions = document.getElementById('assigned-suggestions');
+    const assignedSelect = document.getElementById('id_assigned_to');
+
+    // Pre-fill if editing
+    if (assignedSelect.value) {
+      const selectedText = assignedSelect.options[assignedSelect.selectedIndex].text;
+      assignedInput.value = selectedText;
+    }
+
+    setupSearch(
+      assignedInput,
+      assignedSuggestions,
+      assignedSelect,
+      '/support/technician-search/',
+      (item) => `
+        <div class="suggestion-info">
+          <span class="suggestion-name">${item.full_name}</span>
+        </div>
+      `,
+      (item, input, select, suggs) => {
+        input.value = item.full_name;
+        let option = Array.from(select.options).find(opt => opt.value === item.id);
+        if (!option) {
+          option = new Option(item.full_name, item.id);
+          select.add(option);
+        }
+        select.value = item.id;
+        suggs.style.display = 'none';
+      }
+    );
+
+    // Handle clearing assigned input
+    assignedInput.addEventListener('input', function () {
+      if (this.value === '') assignedSelect.value = '';
+    });
+
+    // ── Happy Code Modal Logic ────────────────────────────────────────────
+    const form = document.querySelector('.form');
+    const statusInput = document.querySelector('input[name="status"]');
+    const happyCodeModal = new bootstrap.Modal(document.getElementById('happyCodeModal'));
+    const happyCodeInput = document.getElementById('happyCodeInput');
+    const happyCodeHidden = document.getElementById('happyCodeHiddenInput');
+    const happyCodeError = document.getElementById('happyCodeError');
+    const confirmBtn = document.getElementById('happyCodeConfirmBtn');
+    let pendingSubmit = false;
+    const initialStatus = statusInput ? statusInput.value : '';
+
+    // Clear modal state on close
+    document.getElementById('happyCodeModal').addEventListener('hidden.bs.modal', function () {
+      if (!pendingSubmit) {
+        happyCodeInput.value = '';
+        happyCodeHidden.value = '';
+        happyCodeError.classList.add('d-none');
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      // Only intercept if status is being changed to "Closed" (4)
+      if (statusInput && statusInput.value === '4' && initialStatus !== '4') {
+        // Check if happy code is already submitted
+        if (happyCodeHidden.value) {
+          return; // Already have code, let it submit
+        }
+
+        e.preventDefault();
+        happyCodeInput.value = '';
+        happyCodeError.classList.add('d-none');
+        happyCodeModal.show();
+      }
+    });
+
+    confirmBtn.addEventListener('click', function () {
+      const code = happyCodeInput.value.trim();
+      if (!code) {
+        happyCodeError.classList.remove('d-none');
+        return;
+      }
+      happyCodeError.classList.add('d-none');
+      happyCodeHidden.value = code;
+      pendingSubmit = true;
+      happyCodeModal.hide();
+      // Resubmit the form
+      form.submit();
+    });
+
+    happyCodeInput.addEventListener('input', function () {
+      happyCodeError.classList.add('d-none');
+      this.value = this.value.toUpperCase();
+    });
+  });
+</script>
+
+<!-- Happy Code Modal -->
+<div class="modal fade" id="happyCodeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 16px;">
+      <div class="modal-header border-0">
+        <h5 class="fw-bold"><i class="bi bi-shield-check me-2"></i> Happy Code Required</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-4">
+          <div class="mb-3" style="width: 64px; height: 64px; background: #e8f4ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+            <i class="bi bi-lock-fill fs-3 text-primary"></i>
+          </div>
+          <p class="text-muted mb-0">This ticket has a happy code that must be entered to close it.</p>
+          <p class="text-muted small">Ask the client to share the happy code shown on their portal.</p>
+        </div>
+        <div class="form-group mb-3">
+          <label class="fw-bold small mb-2">Client Happy Code</label>
+          <input type="text" id="happyCodeInput" class="form-control form-control-lg text-center"
+                 placeholder="Enter 6-character code"
+                 style="font-family: monospace; letter-spacing: 6px; font-size: 1.5rem;"
+                 maxlength="10" autocomplete="off">
+          <div id="happyCodeError" class="text-danger small mt-2 d-none">
+            <i class="bi bi-exclamation-circle me-1"></i> Please enter the happy code provided by the client.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 justify-content-center gap-2 pb-4">
+        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary px-4" id="happyCodeConfirmBtn">
+          <i class="bi bi-check-all me-1"></i> Confirm & Close Ticket
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #id_asset,
+  #id_assigned_to {
+    display: none;
+  }
+
+  .audit-suggestion-item {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f5f5f5;
+    transition: all 0.2s ease;
+  }
+
+  .audit-suggestion-item:hover {
+    background-color: #f0f7ff;
+    border-left: 3px solid #0056b3;
+  }
+
+  .audit-suggestion-item:last-child {
+    border-bottom: none;
+  }
+
+  .suggestion-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .suggestion-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1e293b;
+  }
+
+  .suggestion-tag,
+  .suggestion-email {
+    font-size: 12px;
+    color: #64748b;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Suggestions Dropdown Dark Mode overrides */
+  body.theme-dark .audit-suggestions {
+    background: #1e1e2d !important;
+    border: 1px solid #2e2e42 !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.45) !important;
+  }
+
+  body.theme-dark .audit-suggestion-item {
+    border-bottom: 1px solid #2e2e42;
+  }
+
+  body.theme-dark .audit-suggestion-item:hover {
+    background-color: #2a2650;
+    border-left: 3px solid #4F46E5;
+  }
+
+  body.theme-dark .suggestion-name {
+    color: #e0e0f0;
+  }
+
+  body.theme-dark .suggestion-tag,
+  body.theme-dark .suggestion-email {
+    color: #8b8ba4;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+</style>
+{% endblock content %}

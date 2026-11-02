@@ -1,0 +1,274 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ trans.department_management }} | Asseto{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+{% endblock css %}
+
+{% block content %}
+
+{# ── Page header ──────────────────────────────────────────────────────────── #}
+<div class="list-page-header">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb page-breadcrumb">
+        <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">{{ trans.dashboard }}</a></li>
+        <li class="breadcrumb-item active">{{ trans.departments }}</li>
+      </ol>
+    </nav>
+    <h1>{{ trans.department_management }}</h1>
+    <p class="page-subtitle">{{ trans.department_manage_subtitle }}</p>
+  </div>
+  <div class="d-flex align-items-center gap-2 mt-1">
+    {% if perms.recycle_bin.view_recycle_bin %}
+    <a href="{% url 'recycle_bin:deleted_departments' %}" class="btn-trash" title="{{ trans.recycle_bin }}">
+      <i class="bi bi-trash3"></i> {{ trans.trash }}
+      {% if deleted_department_count %}<span class="count-badge">{{ deleted_department_count }}</span>{% endif %}
+    </a>
+    {% endif %}
+    {% if perms.dashboard.add_department %}
+    <button type="button" class="btn-register" id="add-department-button" hx-get="{% url 'dashboard:add_department' %}"
+      hx-target="#add-department-modal-content" data-bs-toggle="modal" data-bs-target="#add-department-modal">
+      <i class="bi bi-plus-lg"></i> {{ trans.add_department }}
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Stat cards ───────────────────────────────────────────────────────────── #}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="bi bi-people-fill"></i></div>
+    <div>
+      <div class="stat-label">{{ trans.total_departments }}</div>
+      <div class="stat-value" id="total-department-count">{{ total_departments }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+    <div>
+      <div class="stat-label">{{ trans.active }}</div>
+      <div class="stat-value" id="active-department-count">{{ active_departments }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange"><i class="bi bi-dash-circle-fill"></i></div>
+    <div>
+      <div class="stat-label">{{ trans.inactive }}</div>
+      <div class="stat-value" id="inactive-department-count">{{ inactive_departments }}</div>
+    </div>
+  </div>
+  
+</div>
+
+{# ── Filter bar ───────────────────────────────────────────────────────────── #}
+<div class="filter-card">
+  {% csrf_token %}
+  <form id="department-filter-form" hx-get="{% url 'dashboard:search_department' 1 %}"
+    hx-target="#department-list-container" hx-trigger="change">
+    <div class="row g-2 align-items-end">
+
+      <div class="col-12 col-md-6 col-lg">
+        <div class="filter-label">{{ trans.search_department }}</div>
+        <input name="search_text" type="search" autocomplete="off" placeholder="{{ trans.search_department_placeholder }}"
+          hx-get="{% url 'dashboard:search_department' 1 %}"
+          hx-trigger="keyup changed delay:200ms, input changed delay:200ms" hx-target="#department-list-container" aria-label="{{ trans.search_department }}">
+      </div>
+
+      <div class="col-6 col-md-3 col-lg-auto" style="min-width: 160px;">
+        <div class="filter-label">{{ trans.status }}</div>
+        <div class="dropdown">
+          <button class="filter-select-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" id="status-btn">
+            {{ trans.all_status }}
+           
+          </button>
+          <ul class="dropdown-menu">
+            <li><a href="#" class="dropdown-item"
+                onclick="event.preventDefault();document.querySelector('[name=status]').value='';document.getElementById('status-btn').childNodes[0].textContent='{{ trans.all_status }} ';htmx.trigger('#department-filter-form','change');">{{ trans.all_status }}</a></li>
+            <li><a href="#" class="dropdown-item"
+                onclick="event.preventDefault();document.querySelector('[name=status]').value='active';document.getElementById('status-btn').childNodes[0].textContent='{{ trans.active }} ';htmx.trigger('#department-filter-form','change');">{{ trans.active }}</a>
+            </li>
+            <li><a href="#" class="dropdown-item"
+                onclick="event.preventDefault();document.querySelector('[name=status]').value='inactive';document.getElementById('status-btn').childNodes[0].textContent='{{ trans.inactive }} ';htmx.trigger('#department-filter-form','change');">{{ trans.inactive }}</a>
+            </li>
+          </ul>
+          <input type="hidden" name="status">
+        </div>
+      </div>
+
+      <div class="col-auto">
+        <a href="{% url 'dashboard:departments' %}" class="btn-reset" title="{{ trans.reset }}">
+          <i class="bi bi-arrow-counterclockwise"></i> {{ trans.reset }}
+        </a>
+      </div>
+
+    </div>
+  </form>
+  {% if is_demo is True %}
+  <p class="demo-note">{{ trans.demo_mode_disabled }}</p>
+  {% endif %}
+</div>
+
+{# ── Table card ───────────────────────────────────────────────────────────── #}
+  <div class="modal fade" id="add-department-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div id="add-department-modal-content" class="modal-content" hx-target="this"></div>
+  </div>
+</div>
+<!-- update modal -->
+<div class="modal fade" id="update-department-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div id="update-department-modal-content" class="modal-content" hx-target="this"></div>
+  </div>
+</div>
+
+<div class="table-card" id="department-list-container">
+
+
+
+  <div class="table-responsive">
+    <table class="list-table" id="table1">
+      <thead>
+        <tr>
+          <th>{{ trans.sl_no }}</th>
+          <th>{{ trans.department_name_label }}</th>
+          <th>{{ trans.total_asset }}</th>
+          <th>{{ trans.contact_person_name_label }}</th>
+          <th>{{ trans.status }}</th>
+          {% if perms.dashboard.edit_department or perms.dashboard.delete_department or request.user.is_superuser %}
+          <th>{{ trans.actions }}</th>
+          {% endif %}
+        </tr>
+      </thead>
+      {% if page_object %}
+      <tbody id="search_result">
+        {% for department in page_object %}
+        <tr>
+          <td class="table-index-cell">
+            {{ page_object.start_index|add:forloop.counter0|stringformat:"02d" }}
+          </td>
+          <td>
+            <div class="cell-name-main">{{ department.name }}</div>
+          </td>
+          <td>
+            {% with asset_count=department_asset_count|get_item:department.id %}
+            {% if not asset_count %}
+            <span class="count-pill zero">0</span>
+            {% else %}
+            <form method="post" action="{% url 'assets:list' %}" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="department" value="{{ department.id }}">
+              <button type="submit" class="count-pill">
+                {{ asset_count }}
+              </button>
+            </form>
+            {% endif %}
+            {% endwith %}
+          </td>
+          <td>
+            <div class="cell-name-main">{% dynamic_display_name department.contact_person_name %}</div>
+            <div class="cell-name-sub">{{ department.contact_person_email }}</div>
+            {% if department.contact_person_phone %}
+            <div class="cell-name-sub"><i class="bi bi-telephone small pe-1"></i>{{ department.contact_person_phone }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if request.user.is_superuser %}
+            <div class="status-toggle">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch"
+                  hx-post="{% url 'dashboard:department_status' department.id %}"
+                  hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}' {% if department.status %}checked{% endif %}>
+              </div>
+            </div>
+            {% else %}
+            {% if department.status %}
+            <span class="status-badge status-active">{{ trans.active }}</span>
+            {% else %}
+            <span class="status-badge status-inactive">{{ trans.inactive }}</span>
+            {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            <div class="row-actions">
+              {% if request.user.is_superuser %}
+              <a href="{% url 'dashboard:department_details' department.id %}" class="action-btn" title="{{ trans.view_details }}">
+                <i class="bi bi-eye"></i>
+              </a>
+              {% endif %}
+              {% if perms.dashboard.edit_department %}
+              <button type="button" class="action-btn {% if is_demo %}disabled{% endif %}" title="{{ trans.edit_department }}"
+                hx-get="{% url 'dashboard:update_department' department.id %}" hx-target="#update-department-modal-content"
+                data-bs-toggle="modal" data-bs-target="#update-department-modal" {% if is_demo %}disabled{% endif %}>
+                <i class="bi bi-pencil"></i>
+              </button>
+              {% endif %}
+              {% if perms.dashboard.delete_department %}
+              <form action="{% url 'dashboard:delete_department' department.id %}" method="post" class="form-row-action"
+                onsubmit="return confirm('{{ trans.delete_confirm_department }}')">
+                {% csrf_token %}
+                <button type="submit" class="action-btn danger {% if is_demo %}disabled{% endif %}"
+                  title="{{ trans.delete_department }}" {% if is_demo %}disabled{% endif %}>
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% else %}
+      <tbody>
+        <tr>
+          <td colspan="6">
+            <div class="table-empty-state">
+              <i class="bi bi-people d-block"></i>
+              <p>{{ trans.no_departments_found }}<br>
+                {% if perms.dashboard.add_department %}
+                <button type="button" class="btn btn-link link-primary p-0 border-0 bg-transparent"
+                  hx-get="{% url 'dashboard:add_department' %}" hx-target="#add-department-modal-content"
+                  data-bs-toggle="modal" data-bs-target="#add-department-modal">{{ trans.create_first_department }}</button>
+                {% endif %}
+              </p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+      {% endif %}
+    </table>
+  </div>
+
+  {# ── Pagination ─────────────────────────────────────────────────────────── #}
+  {% include 'commons/htmx-pagination.html' with search_url="/admin/departments/search/" filter_form="#department-filter-form" target="#department-list-container" item_label=trans.departments %}
+</div>
+
+<script>
+  function requestAndSendNotification() {
+    if (Notification.permission === "granted") {
+      sendNotification();
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") sendNotification();
+      });
+    }
+  }
+  function sendNotification() {
+    new Notification("{{ trans.department_added_notification_title }}", {
+      body: "{{ trans.department_added_notification_body }}",
+      icon: "{% static 'images/logo/favicon.png' %}",
+    });
+  }
+  document.body.addEventListener("departmentAdded", function () {
+    requestAndSendNotification();
+    location.reload();
+  });
+  document.body.addEventListener("departmentUpdated", function () {
+    location.reload();
+  });
+</script>
+
+{% endblock content %}

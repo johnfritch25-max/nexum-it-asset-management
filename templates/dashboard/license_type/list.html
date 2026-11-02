@@ -1,0 +1,248 @@
+{% extends 'layouts/main-layout.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block title %}License Type Management | Asseto{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+{% endblock css %}
+
+{% block content %}
+
+{# ── Page header ──────────────────────────────────────────────────────────── #}
+<div class="list-page-header">
+  <div>
+     <nav aria-label="breadcrumb">
+      <ol class="breadcrumb page-breadcrumb">
+        <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">{{ trans.dashboard }}</a></li>
+        <li class="breadcrumb-item active">{{ trans.license_types }}</li>
+      </ol>
+    </nav>
+   <h1>{{ trans.license_type_management }}</h1>
+    <p class="page-subtitle">{{ trans.license_type_subtitle }}</p>
+  </div>
+  <div class="d-flex align-items-center gap-2 mt-1">
+    {% if perms.recycle_bin.view_recycle_bin %}
+    <a href="{% url 'recycle_bin:deleted_license_types' %}" class="btn-trash" title="{{ trans.recycle_bin }}">
+      <i class="bi bi-trash3"></i> {{ trans.trash }}
+      {% if deleted_license_types_count %}
+        <span class="count-badge">{{ deleted_license_types_count }}</span>
+      {% endif %}
+    </a>
+    {% endif %}
+    {% if perms.authentication.add_license_type %}
+    <button type="button" class="btn-register" id="add-license-type-button" hx-get="{% url 'dashboard:add_license_type' %}"
+      hx-target="#add-license-type-modal-content" data-bs-toggle="modal" data-bs-target="#add-license-type-modal">
+        <i class="bi bi-plus-lg"></i> {{ trans.add_license_type }}
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Stat cards ───────────────────────────────────────────────────────────── #}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="bi bi-journal-check"></i></div>
+    <div>
+     <div class="stat-label">{{ trans.total_types }}</div>
+      <div class="stat-value">{{ total_license_types }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+    <div>
+      <div class="stat-label">{{ trans.active }}</div>
+      <div class="stat-value">{{ active_license_types }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange"><i class="bi bi-dash-circle-fill"></i></div>
+    <div>
+     <div class="stat-label">{{ trans.inactive }}</div>
+      <div class="stat-value">{{ inactive_license_types }}</div>
+    </div>
+  </div>
+</div>
+
+{# ── Filter bar ───────────────────────────────────────────────────────────── #}
+<div class="filter-card">
+  {% csrf_token %}
+  <form id="license-type-filter-form" hx-get="{% url 'dashboard:search_license_type' page_object.number %}"
+    hx-target="#license-type-list-section" hx-trigger="change, keyup changed delay:400ms from:input">
+    <div class="row g-2 align-items-end">
+
+      <div class="col-12 col-md-6 col-lg">
+         <div class="filter-label">{{ trans.search_license_type }}</div>
+        <input name="search_text" type="search" autocomplete="off"  placeholder="{{ trans.search_placeholder }}"
+          hx-get="{% url 'dashboard:search_license_type' page_object.number %}"
+          hx-trigger="keyup changed delay:400ms, search" hx-target="#license-type-list-section" aria-label="Search license types">
+      </div>
+
+      <div class="col-6 col-md-3 col-lg-auto" style="min-width: 160px;">
+         <div class="filter-label">{{ trans.status }}</div>
+        <div class="dropdown">
+          <button class="filter-select-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" id="status-btn">
+            {{ trans.all_status }}
+           
+          </button>
+          <ul class="dropdown-menu">
+            <li><a href="#" class="dropdown-item"
+                onclick="event.preventDefault();document.querySelector('[name=status]').value='';document.getElementById('status-btn').childNodes[0].textContent='{{ trans.all_status }} ';htmx.trigger('#license-type-filter-form','change');">{{ trans.all_status }}</a></li>
+            <li><a href="#" class="dropdown-item"
+                onclick="event.preventDefault();document.querySelector('[name=status]').value='active';document.getElementById('status-btn').childNodes[0].textContent='{{ trans.active }} ';htmx.trigger('#license-type-filter-form','change');">{{ trans.active }}</a>
+            </li>
+            <li><a href="#" class="dropdown-item"
+                onclick="event.preventDefault();document.querySelector('[name=status]').value='inactive';document.getElementById('status-btn').childNodes[0].textContent='{{ trans.inactive }} ';htmx.trigger('#license-type-filter-form','change');">{{ trans.inactive }}</a>
+            </li>
+          </ul>
+          <input type="hidden" name="status">
+        </div>
+      </div>
+
+      <div class="col-auto">
+        <a href="{% url 'dashboard:license_type_list' %}" class="btn-reset" title="{{ trans.reset }}">
+          <i class="bi bi-arrow-counterclockwise"></i> {{ trans.reset }}
+        </a>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+{# ── Table card ───────────────────────────────────────────────────────────── #}
+<div class="table-card">
+  <!-- add modal -->
+  <div class="modal fade" id="add-license-type-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div id="add-license-type-modal-content" class="modal-content" hx-target="this"></div>
+    </div>
+  </div>
+  <!-- update modal -->
+  <div class="modal fade" id="update-license-type-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div id="update-license-type-modal-content" class="modal-content" hx-target="this"></div>
+    </div>
+  </div>
+
+  <div id="license-type-list-section">
+  <div class="table-responsive">
+    <table class="list-table" id="table1">
+      <thead>
+        <tr>
+        <th>{{ trans.sl_no }}</th>
+        <th>{{ trans.type_name }}</th>
+        <th>{{ trans.total_licenses }}</th>
+        <th>{{ trans.status }}</th>
+
+          {% if perms.authentication.edit_license_type or perms.authentication.delete_license_type or request.user.is_superuser %}
+          <th>{{ trans.actions }}</th>
+          {% endif %}
+        </tr>
+      </thead>
+      {% if page_object %}
+      <tbody id="search_result">
+        {% for lt in page_object %}
+        <tr>
+          <td class="table-index-cell">
+            {{ page_object.start_index|add:forloop.counter0|stringformat:"02d" }}
+          </td>
+          <td>
+            <div class="cell-name-main">{{ lt.name }}</div>
+          </td>
+          <td>
+            {% with count=license_type_count|get_item:lt.id %}
+            {% if not count %}
+            <span class="count-pill zero">0</span>
+            {% else %}
+            <form method="post" action="{% url 'license:license_list' %}" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="license_type" value="{{ lt.id }}">
+              <button type="submit" class="count-pill">
+                {{ count }}
+              </button>
+            </form>
+            {% endif %}
+            {% endwith %}
+          </td>
+          <td>
+            {% if request.user.is_superuser %}
+            <div class="status-toggle">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch"
+                  hx-post="{% url 'dashboard:license_type_status' lt.id %}"
+                  hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}' {% if lt.status %}checked{% endif %}>
+              </div>
+            </div>
+            {% else %}
+            {% if lt.status %}
+            <span class="status-badge status-active">{{ trans.active }}</span>
+            {% else %}
+            <span class="status-badge status-inactive">{{ trans.inactive }}</span>
+            {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            <div class="row-actions">
+              {% if request.user.is_superuser %}
+              <a href="{% url 'dashboard:license_type_details' lt.id %}" class="action-btn" title="{{ trans.view_details }}">
+                <i class="bi bi-eye"></i>
+              </a>
+              {% endif %}
+              {% if perms.authentication.edit_license_type %}
+              <button type="button" class="action-btn" title="{{ trans.edit }}"
+                hx-get="{% url 'dashboard:update_license_type' lt.id %}" hx-target="#update-license-type-modal-content"
+                data-bs-toggle="modal" data-bs-target="#update-license-type-modal">
+                <i class="bi bi-pencil"></i>
+              </button>
+              {% endif %}
+              {% if perms.authentication.delete_license_type %}
+              <form action="{% url 'dashboard:delete_license_type' lt.id %}" method="post" class="form-row-action"
+                onsubmit="return confirm('{{ trans.confirm_delete }}')">
+                {% csrf_token %}
+                <button type="submit" class="action-btn danger" title="{{ trans.delete }}">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% else %}
+      <tbody>
+        <tr>
+          <td colspan="5">
+            <div class="table-empty-state">
+              <i class="bi bi-journal-check d-block"></i>
+              <p>{{ trans.no_license_types_found }}<br>
+                {% if perms.authentication.add_license_type %}
+                <button type="button" class="btn btn-link link-primary p-0 border-0 bg-transparent"
+                  hx-get="{% url 'dashboard:add_license_type' %}" hx-target="#add-license-type-modal-content"
+                  data-bs-toggle="modal" data-bs-target="#add-license-type-modal">{{ trans.register_first_license_type }}</button>
+                {% endif %}
+              </p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+      {% endif %}
+    </table>
+  </div>
+
+  {# ── Pagination ─────────────────────────────────────────────────────────── #}
+  {% include 'commons/htmx-pagination.html' with search_url="/admin/license-type/search/" filter_form="#license-type-filter-form" target="#license-type-list-section" item_label=trans.types %}
+  </div>{# /#license-type-list-section #}
+</div>
+
+<script>
+  document.body.addEventListener("licenseTypeAdded", function () {
+    location.reload();
+  });
+  document.body.addEventListener("licenseTypeUpdated", function () {
+    location.reload();
+  });
+</script>
+
+{% endblock content %}

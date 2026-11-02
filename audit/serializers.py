@@ -1,0 +1,70 @@
+from rest_framework import serializers
+from audit.models import Audit, AuditImage
+
+
+class AuditSerializer(serializers.ModelSerializer):
+    images = serializers.ListField(
+        child=serializers.ImageField(required=False, allow_null=True),
+        required=False,
+        allow_empty=True,
+        allow_null=True,
+        default=list,
+    )
+
+    class Meta:
+        model = Audit
+        fields = [
+            "images",
+            "audited_by",
+            "created_at",
+            "assigned_to",
+            "asset",
+            "organization",
+            "condition",
+            "notes",
+        ]
+
+    # Fix: Only decode, never remove or pop keys in to_internal_value
+    def to_internal_value(self, data):
+        data = data.copy()
+        if (data.get("images") or "") == "":
+            data.pop("images", None)
+
+        return super().to_internal_value(data)
+
+    def validate_tag(self, tag):
+        if not tag:
+            raise serializers.ValidationError("Tag can not be empty")
+        return tag
+
+    def validate_name(self, name):
+        if not name:
+            raise serializers.ValidationError("Name can not be blank")
+        return name
+
+    def validate_product(self, product):
+        if not product:
+            raise serializers.ValidationError("Product can not be blank")
+        return product
+
+    def create(self, validated_data):
+        images = validated_data.pop("images", [])
+        audit = Audit.objects.create(
+            **validated_data,
+        )
+        for image in images:
+            AuditImage.objects.create(image=image, audit=audit)
+        return audit
+
+    def update(self, instance, validated_data):
+        image_data = validated_data.pop("images", None)
+        for attribute, value in validated_data.items():
+            if value is None:
+                continue
+            setattr(instance, attribute, value)
+        instance.save()
+        if image_data is not None:
+            for image in image_data:
+                AuditImage.objects.create(audit=instance, image=image)
+
+        return instance

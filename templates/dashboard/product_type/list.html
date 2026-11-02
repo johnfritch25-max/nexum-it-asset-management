@@ -1,0 +1,267 @@
+{% extends 'layouts/main-layout.html' %}
+{% load custom_filters %}
+{% load static %}
+
+{% block title %}{{ trans.product_type_management }} | Asseto{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+{% endblock css %}
+
+{% block content %}
+
+{# ── Page header ──────────────────────────────────────────────────────────── #}
+<div class="list-page-header">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb page-breadcrumb">
+        <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">{{ trans.dashboard }}</a></li>
+        <li class="breadcrumb-item active">{{ trans.product_types }}</li>
+      </ol>
+    </nav>
+    <h1>{{ trans.product_type_management }}</h1>
+    <p class="page-subtitle">{{ trans.product_type_manage_subtitle }}</p>
+  </div>
+  <div class="d-flex align-items-center gap-2 mt-1">
+    {% if perms.recycle_bin.view_recycle_bin %}
+    <a href="{% url 'recycle_bin:deleted_product_types' %}" class="btn-trash" title="{{ trans.recycle_bin }}">
+      <i class="bi bi-trash3"></i> {{ trans.trash }}
+      {% if deleted_product_types_count %}<span class="count-badge">{{ deleted_product_types_count }}</span>{% endif %}
+    </a>
+    {% endif %}
+    {% if perms.dashboard.add_product_type %}
+    <button type="button" class="btn-register" id="add-product-type-button" hx-get="{% url 'dashboard:add_product_type' %}"
+      hx-target="#add-product-type-modal-content" data-bs-toggle="modal" data-bs-target="#add-product-type-modal">
+      <i class="bi bi-plus-lg"></i> {{ trans.add_product_type }}
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+{# ── Stat cards ───────────────────────────────────────────────────────────── #}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="bi bi-box-seam"></i></div>
+    <div>
+      <div class="stat-label">{{ trans.total_types }}</div>
+      <div class="stat-value">{{ total_product_types }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+    <div>
+      <div class="stat-label">{{ trans.active }}</div>
+      <div class="stat-value">{{ active_product_types }}</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange"><i class="bi bi-dash-circle-fill"></i></div>
+    <div>
+      <div class="stat-label">{{ trans.inactive }}</div>
+      <div class="stat-value">{{ inactive_product_types }}</div>
+    </div>
+  </div>
+</div>
+
+{# ── Filter bar ───────────────────────────────────────────────────────────── #}
+<div class="filter-card">
+  {% csrf_token %}
+  <form id="product-type-filter-form" hx-get="{% url 'dashboard:search_product_type' page_object.number %}"
+    hx-target="#product-type-list-section" hx-trigger="change, keyup changed delay:400ms from:input">
+    <div class="row g-2 align-items-end">
+
+      <div class="col-12 col-md-6 col-lg">
+        <div class="filter-label">{{ trans.search_product_type }}</div>
+        <input name="search_text" type="search" autocomplete="off" placeholder="{{ trans.search_product_type_placeholder }}"
+          hx-get="{% url 'dashboard:search_product_type' page_object.number %}"
+          hx-trigger="keyup changed delay:400ms, search" hx-target="#product-type-list-section" aria-label="{{ trans.search_product_type }}">
+      </div>
+
+      <div class="col-6 col-md-3 col-lg-auto" style="min-width: 160px;">
+        <div class="filter-label">{{ trans.status }}</div>
+        <div class="dropdown">
+          <button class="filter-select-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" id="status-btn">
+            {{ trans.all_status }}
+           
+          </button>
+          <ul class="dropdown-menu">
+            <li><a href="#" class="dropdown-item"
+                onclick="event.preventDefault();document.querySelector('[name=status]').value='';document.getElementById('status-btn').childNodes[0].textContent='{{ trans.all_status }} ';htmx.trigger('#product-type-filter-form','change');">{{ trans.all_status }}</a></li>
+            <li><a href="#" class="dropdown-item"
+                onclick="event.preventDefault();document.querySelector('[name=status]').value='active';document.getElementById('status-btn').childNodes[0].textContent='{{ trans.active }} ';htmx.trigger('#product-type-filter-form','change');">{{ trans.active }}</a>
+            </li>
+            <li><a href="#" class="dropdown-item"
+                onclick="event.preventDefault();document.querySelector('[name=status]').value='inactive';document.getElementById('status-btn').childNodes[0].textContent='{{ trans.inactive }} ';htmx.trigger('#product-type-filter-form','change');">{{ trans.inactive }}</a>
+            </li>
+          </ul>
+          <input type="hidden" name="status">
+        </div>
+      </div>
+
+      <div class="col-auto">
+        <a href="{% url 'dashboard:product_type_list' %}" class="btn-reset" title="{{ trans.reset }}">
+          <i class="bi bi-arrow-counterclockwise"></i> {{ trans.reset }}
+        </a>
+      </div>
+
+    </div>
+  </form>
+  {% if is_demo is True %}
+  <p class="demo-note">{{ trans.demo_mode_disabled }}</p>
+  {% endif %}
+</div>
+
+{# ── Table card ───────────────────────────────────────────────────────────── #}
+<div class="table-card">
+  <!-- add modal -->
+  <div class="modal fade text-left" id="add-product-type-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div id="add-product-type-modal-content" class="modal-content" hx-target="this"></div>
+    </div>
+  </div>
+  <!-- update modal -->
+  <div class="modal fade text-left" id="update-product-type-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div id="update-product-type-modal-content" class="modal-content" hx-target="this"></div>
+    </div>
+  </div>
+
+  <div id="product-type-list-section">
+  <div class="table-responsive">
+    <table class="list-table" id="table1">
+      <thead>
+        <tr>
+          <th>{{ trans.sl_no }}</th>
+          <th>{{ trans.type_name }}</th>
+          <th>{{ trans.total_assets }}</th>
+          <th>{{ trans.status }}</th>
+          {% if perms.dashboard.edit_product_type or perms.dashboard.delete_product_type or request.user.is_superuser %}
+          <th>{{ trans.actions }}</th>
+          {% endif %}
+        </tr>
+      </thead>
+      {% if page_object %}
+      <tbody id="search_result">
+        {% for pt in page_object %}
+        <tr>
+          <td class="table-index-cell">
+            {{ page_object.start_index|add:forloop.counter0|stringformat:"02d" }}
+          </td>
+          <td>
+            <div class="cell-name-main">{{ pt.name }}</div>
+          </td>
+          <td>
+            {% with asset_count=product_type_asset_count|get_item:pt.id %}
+            {% if not asset_count %}
+            <span class="count-pill zero">0</span>
+            {% else %}
+            <form method="post" action="{% url 'assets:list' %}" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="type" value="{{ pt.id }}">
+              <button type="submit" class="count-pill">
+                {{ asset_count }}
+              </button>
+            </form>
+            {% endif %}
+            {% endwith %}
+          </td>
+          <td>
+            {% if request.user.is_superuser %}
+            <div class="status-toggle">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch"
+                  hx-post="{% url 'dashboard:product_type_status' pt.id %}"
+                  hx-headers='{"X-CSRFToken":"{{ csrf_token }}"}' {% if pt.status %}checked{% endif %}
+                  {% if pt.can_modify is False %}disabled{% endif %}>
+              </div>
+            </div>
+            {% else %}
+            {% if pt.status %}
+            <span class="status-badge status-active">{{ trans.active }}</span>
+            {% else %}
+            <span class="status-badge status-inactive">{{ trans.inactive }}</span>
+            {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            <div class="row-actions">
+              {% if request.user.is_superuser %}
+              <a href="{% url 'dashboard:product_type_details' pt.id %}" class="action-btn" title="{{ trans.view_details }}">
+                <i class="bi bi-eye"></i>
+              </a>
+              {% endif %}
+              {% if perms.dashboard.edit_product_type %}
+              <button type="button" class="action-btn {% if is_demo %}disabled{% endif %}" title="{{ trans.edit_product_type }}"
+                hx-get="{% url 'dashboard:update_product_type' pt.id %}" hx-target="#update-product-type-modal-content"
+                data-bs-toggle="modal" data-bs-target="#update-product-type-modal"
+                {% if pt.can_modify is False or is_demo %}disabled{% endif %}>
+                <i class="bi bi-pencil"></i>
+              </button>
+              {% endif %}
+              {% if perms.dashboard.delete_product_type %}
+              <form action="{% url 'dashboard:delete_product_type' pt.id %}" method="post" class="form-row-action"
+                onsubmit="return confirm('{{ trans.delete_confirm_product_type }}')">
+                {% csrf_token %}
+                <button type="submit" class="action-btn danger {% if is_demo %}disabled{% endif %}"
+                  title="{{ trans.delete_product_type }}" {% if pt.can_modify is False or is_demo %}disabled{% endif %}>
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      {% else %}
+      <tbody>
+        <tr>
+          <td colspan="5">
+            <div class="table-empty-state">
+              <i class="bi bi-box-seam d-block"></i>
+              <p>{{ trans.no_product_types_found }}<br>
+                {% if perms.dashboard.add_product_type %}
+                <button type="button" class="btn btn-link link-primary p-0 border-0 bg-transparent"
+                  hx-get="{% url 'dashboard:add_product_type' %}" hx-target="#add-product-type-modal-content"
+                  data-bs-toggle="modal" data-bs-target="#add-product-type-modal">{{ trans.create_first_product_type }}</button>
+                {% endif %}
+              </p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+      {% endif %}
+    </table>
+  </div>
+
+  {# ── Pagination ─────────────────────────────────────────────────────────── #}
+  {% include 'commons/htmx-pagination.html' with search_url="/admin/product-types/search/" filter_form="#product-type-filter-form" target="#product-type-list-section" item_label=trans.product_types %}
+  </div>{# /#product-type-list-section #}
+</div>
+
+<script>
+  function requestAndSendNotification() {
+    if (Notification.permission === "granted") {
+      sendNotification();
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") sendNotification();
+      });
+    }
+  }
+  function sendNotification() {
+    new Notification("{{ trans.product_type_added_notification_title }}", {
+      body: "{{ trans.product_type_added_notification_body }}",
+      icon: "{% static 'images/logo/favicon.png' %}",
+    });
+  }
+  document.body.addEventListener("productTypeAdded", function () {
+    requestAndSendNotification();
+    location.reload();
+  });
+  document.body.addEventListener("productTypeUpdated", function () {
+    location.reload();
+  });
+</script>
+
+{% endblock content %}

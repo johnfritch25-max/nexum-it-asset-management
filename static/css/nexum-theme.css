@@ -1,0 +1,194 @@
+/* =============================================================================
+   nexum-theme.css — Nexum Technologies ITAM Color Palette & Branding Overrides
+   Nexum brand colors:
+     Primary:    #14213D  (Deep Navy Blue)
+     Secondary:  #0F9D8A  (Teal)
+     Accent:     #E8F1FA  (Light Blue)
+     Background: #F5F7FA  (Light Gray)
+     Text:       #202938  (Dark Charcoal)
+     White:      #FFFFFF
+     Border:     #DCE3EB  (Soft Gray)
+   ============================================================================= */
+
+/* ── CSS custom properties ─────────────────────────────────────────────────── */
+:root {
+    --nexum-navy:       #14213D;
+    --nexum-teal:       #0F9D8A;
+    --nexum-accent:     #E8F1FA;
+    --nexum-bg:         #F5F7FA;
+    --nexum-text:       #202938;
+    --nexum-white:      #FFFFFF;
+    --nexum-border:     #DCE3EB;
+    --nexum-teal-soft:  #E6F7F5;
+    --nexum-navy-soft:  #EAF0F8;
+}
+
+/* ── Page background ──────────────────────────────────────────────────────── */
+body {
+    background-color: var(--nexum-bg) !important;
+    color: var(--nexum-text) !important;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+#sidebar {
+    background-color: var(--nexum-navy) !important;
+}
+
+.sidebar-wrapper {
+    background-color: var(--nexum-navy) !important;
+}
+
+.sidebar-wrapper .sidebar-header {
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* Sidebar links */
+.sidebar-wrapper .menu .sidebar-link {
+    color: rgba(255, 255, 255, 0.75) !important;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-wrapper .menu .sidebar-link:hover,
+.sidebar-wrapper .menu .sidebar-item.active > .sidebar-link {
+    background-color: rgba(15, 157, 138, 0.18) !important;
+    color: var(--nexum-white) !important;
+}
+
+.sidebar-wrapper .menu .sidebar-item.active > .sidebar-link {
+    border-left: 3px solid var(--nexum-teal) !important;
+}
+
+/* Sidebar section titles */
+.sidebar-wrapper .menu .sidebar-title {
+    color: rgba(255,255,255,0.4) !important;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* Submenu */
+.sidebar-wrapper .menu .submenu a {
+    color: rgba(255,255,255,0.65) !important;
+}
+.sidebar-wrapper .menu .submenu a:hover,
+.sidebar-wrapper .menu .submenu-item.active > a {
+    color: var(--nexum-white) !important;
+}
+
+/* ── Top header / navbar ──────────────────────────────────────────────────── */
+.main > header {
+    background-color: var(--nexum-white) !important;
+    border-bottom: 1px solid var(--nexum-border) !important;
+}
+
+/* ── Primary button ───────────────────────────────────────────────────────── */
+.btn-primary {
+    background-color: var(--nexum-teal) !important;
+    border-color: var(--nexum-teal) !important;
+    color: var(--nexum-white) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: #0d8a79 !important;
+    border-color: #0d8a79 !important;
+}
+
+/* Secondary / outline buttons */
+.btn-outline-primary {
+    color: var(--nexum-teal) !important;
+    border-color: var(--nexum-teal) !important;
+}
+.btn-outline-primary:hover {
+    background-color: var(--nexum-teal) !important;
+    color: var(--nexum-white) !important;
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────────── */
+.card {
+    border: 1px solid var(--nexum-border) !important;
+    background-color: var(--nexum-white) !important;
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────────── */
+.table thead th {
+    background-color: var(--nexum-navy) !important;
+    color: var(--nexum-white) !important;
+    border-color: var(--nexum-border) !important;
+}
+
+.table tbody tr:hover {
+    background-color: var(--nexum-accent) !important;
+}
+
+/* ── Dashboard metric cards — override Nexum colors ─────────────────────── */
+.metric-blue  { background-color: var(--nexum-navy-soft) !important; color: var(--nexum-navy) !important; }
+.metric-teal  { background-color: var(--nexum-teal-soft) !important; color: var(--nexum-teal) !important; }
+.metric-green { background-color: var(--nexum-teal-soft) !important; color: var(--nexum-teal) !important; }
+
+/* Active/primary chart accent */
+.chart-header-line { background: var(--nexum-teal) !important; }
+
+.tab-link-premium.active {
+    color: var(--nexum-teal) !important;
+}
+
+/* ── Auth / login page ────────────────────────────────────────────────────── */
+#auth #auth-right {
+    background: linear-gradient(135deg, var(--nexum-navy) 0%, #1a3060 50%, #0F4D45 100%) !important;
+}
+
+/* Login logo area */
+#auth #auth-left .auth-logo {
+    margin-bottom: 3rem !important;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.site-footer {
+    background-color: var(--nexum-white) !important;
+    border-top: 1px solid var(--nexum-border) !important;
+}
+
+/* ── Form inputs ──────────────────────────────────────────────────────────── */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--nexum-teal) !important;
+    box-shadow: 0 0 0 0.2rem rgba(15, 157, 138, 0.2) !important;
+}
+
+/* ── Links ────────────────────────────────────────────────────────────────── */
+a {
+    color: var(--nexum-teal);
+}
+a:hover {
+    color: var(--nexum-navy);
+}
+
+/* ── Page headings ────────────────────────────────────────────────────────── */
+.page-heading h3 {
+    color: var(--nexum-navy) !important;
+    font-weight: 700;
+}
+
+/* ── Select2 theming ──────────────────────────────────────────────────────── */
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--multiple {
+    border-color: var(--nexum-border) !important;
+}
+.select2-container--default.select2-container--focus .select2-selection--multiple,
+.select2-container--default .select2-selection--single:focus {
+    border-color: var(--nexum-teal) !important;
+}
+
+/* ── Dark mode — keep sidebar readable in dark theme ────────────────────── */
+body.theme-dark #sidebar,
+body.theme-dark .sidebar-wrapper {
+    background-color: #0d1826 !important;
+}
+
+body.theme-dark .sidebar-wrapper .menu .sidebar-link:hover,
+body.theme-dark .sidebar-wrapper .menu .sidebar-item.active > .sidebar-link {
+    background-color: rgba(15, 157, 138, 0.25) !important;
+}

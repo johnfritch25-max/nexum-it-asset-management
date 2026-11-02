@@ -1,0 +1,459 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ trans.ticket_details }} #{{ ticket.ticket_id }}: {{ ticket.subject }} | Asseto{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/product-details.css' %}">
+<link rel="stylesheet" href="{% static 'css/pages/support-tickets.css' %}">
+{% endblock css %}
+
+{% block content %}
+<div class="pb-5 mt-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb page-breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="/" class="breadcrumb-link">{{ trans.dashboard }}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'support:ticket_list' %}"
+                            class="breadcrumb-link">{{ trans.tickets_breadcrumb }}</a></li>
+                    <li class="breadcrumb-item active">{{ trans.ticket_details }}</li>
+                </ol>
+            </nav>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="t-badge t-badge-id">#{{ ticket.ticket_id }}</span>
+                <div class="status-dropdown-wrapper" style="position:relative;">
+                    <select id="statusSelect" data-no-select2 class="t-badge t-badge-status-{{ ticket.status }}" style="width:auto;padding:0.25rem 1.75rem 0.25rem 0.75rem;border:1.5px solid rgba(0,0,0,0.15);border-radius:6px;cursor:pointer;appearance:auto;font-size:0.75rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+                        {% for key, label in status_choices %}
+                        <option value="{{ key }}" {% if ticket.status == key %}selected{% endif %}
+                            style="{% if key == '0' %}background-color:#E0F7FA;color:#00838F;{% elif key == '1' %}background-color:#1E3A8A;color:#fff;{% elif key == '2' %}background-color:#FEF3C7;color:#D97706;{% elif key == '3' %}background-color:#E8F5E9;color:#2E7D32;{% elif key == '4' %}background-color:#F1F3F5;color:#495057;{% endif %}padding:4px 8px;font-weight:600;">{{ label|upper }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <h4 class="mb-0 fw-bold">{{ ticket.subject }}</h4>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'support:ticket_list' %}" class="btn-back-list">
+                <i class="bi bi-arrow-left"></i> {{ trans.back_to_list }}
+            </a>
+            <a href="{% url 'support:ticket_update' ticket.id %}" class="btn-edit-ticket shadow-sm">
+                <i class="bi bi-pencil-fill"></i> {{ trans.edit_ticket_btn }}
+            </a>
+        </div>
+    </div>
+
+    {# Four Top Cards #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="detail-card h-100 mb-0 d-flex flex-column justify-content-center">
+                <div class="info-card-title">{{ trans.assigned_technician }}</div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="info-icon-wrapper avatar-wrap">
+                        {% if ticket.assigned_to and ticket.assigned_to.profile_pic %}
+                        <img src="{{ ticket.assigned_to.profile_pic.url }}" alt="">
+                        {% else %}
+                        <img src="{% static 'images/faces/1.jpg' %}" alt="" class="w-100 h-100 rounded-circle"
+                            style="object-fit: cover;">
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="info-value-primary">
+                            {{ ticket.assigned_to.get_full_name|default:trans.unassigned }}
+                        </div>
+                        <div class="info-value-secondary">
+                            {% if ticket.assigned_to and ticket.assigned_to.role %}
+                                {{ ticket.assigned_to.role.related_name|default:ticket.assigned_to.role.name|default:trans.technician }}
+                            {% else %}
+                                Technician
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="detail-card h-100 mb-0 d-flex flex-column justify-content-center">
+                <div class="info-card-title">{{ trans.department_label }}</div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="info-icon-wrapper">
+                        <i class="bi bi-hdd-stack fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="info-value-primary">
+                            {% if ticket.assigned_to and ticket.assigned_to.department %}
+                                {{ ticket.assigned_to.department.name }}
+                            {% elif ticket.department %}
+                                {{ ticket.department.name }}
+                            {% else %}
+                                {{ trans.unassigned }}
+                            {% endif %}
+                        </div>
+                        <div class="info-value-secondary">
+                            {% if ticket.assigned_to and ticket.assigned_to.role %}
+                                {{ ticket.assigned_to.role.related_name|default:ticket.assigned_to.role.name }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="detail-card h-100 mb-0 d-flex flex-column justify-content-center">
+                <div class="info-card-title">{{ trans.date_opened }}</div>
+                <div class="d-flex align-items-center gap-2">
+                    <div>
+                        <div class="info-value-primary">{{ ticket.created_at|date:"M j" }}</div>
+                        <div class="info-value-secondary">{{ ticket.created_at|date:"Y, h:i A" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="detail-card h-100 mb-0 d-flex flex-column justify-content-center">
+                <div class="info-card-title">{{ trans.location }}</div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="info-icon-wrapper">
+                        <i class="bi bi-geo-alt fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="info-value-primary">
+                            {% if ticket.assigned_to and ticket.assigned_to.location %}
+                                {{ ticket.assigned_to.location.office_name }}
+                            {% elif ticket.location %}
+                                {{ ticket.location.office_name }}
+                            {% else %}
+                                {{ trans.unassigned }}
+                            {% endif %}
+                        </div>
+                        <div class="info-value-secondary">
+                            {% if ticket.assigned_to and ticket.assigned_to.location and ticket.assigned_to.location.address %}
+                                {{ ticket.assigned_to.location.address.city }}{% if ticket.assigned_to.location.address.state %}, {{ ticket.assigned_to.location.address.state }}{% endif %}
+                            {% elif ticket.location and ticket.location.address %}
+                                {{ ticket.location.address.city }}{% if ticket.location.address.state %}, {{ ticket.location.address.state }}{% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Technical Description #}
+    <div class="detail-card mb-4">
+        <div class="section-title">
+            <i class="bi bi-file-text text-primary fs-5"></i> {{ trans.technical_description }}
+        </div>
+        <div class="desc-text mt-3">
+            {% if ticket.description %}
+            {{ ticket.description|linebreaksbr }}
+            {% else %}
+            <div class="doc-empty-state py-3" style="min-height: auto; border-radius: 12px;">
+                <div class="empty-icon-wrap mb-2" style="width: 40px; height: 40px; font-size: 1rem;">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <p class="small text-muted">{{ trans.no_technical_description }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Asset & Work Impact #}
+    <div class="detail-card mb-4">
+        <h6 class="fw-bold mb-4">{{ trans.asset_work_impact }}</h6>
+        <div class="impact-grid">
+            <div class="impact-item">
+                <div class="info-card-title">{{ trans.asset_name_id }}</div>
+                <div class="impact-value">{% if ticket.asset %}{{ ticket.asset.name }} <br><span class="asset-tag-pill">{{ ticket.asset.tag }}</span>{% else %}{{ trans.no_asset_linked }}{% endif %}</div>
+            </div>
+            <div class="impact-item">
+                <div class="info-card-title">{{ trans.ticket_type }}</div>
+                <div class="impact-value">{{ ticket.get_ticket_type_display }}</div>
+            </div>
+            <div class="impact-item">
+                <div class="info-card-title">{{ trans.estimated_eta }}</div>
+                <div class="impact-value">
+                    {% if ticket.estimated_eta %}
+                    {{ ticket.estimated_eta|timeuntil }}
+                    {% else %}
+                    4.5 Hours
+                    {% endif %}
+                </div>
+            </div>
+            <div class="impact-item">
+                <div class="info-card-title">{{ trans.hours_worked }}</div>
+                <div class="impact-value">{{ ticket.hours_worked }} hrs</div>
+            </div>
+            <div class="impact-item">
+                <div class="info-card-title">{{ trans.impact_level }}</div>
+                <div>
+                    {% if ticket.impact_level == '2' or ticket.impact_level == '3' %}
+                    <span class="impact-badge">{{ ticket.get_impact_level_display|upper }} IMPACT</span>
+                    {% else %}
+                    <div class="impact-value">{{ ticket.get_impact_level_display }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Supporting Documents #}
+    <div class="docs-header mt-5">
+        <h6 class="fw-bold mb-0">{{ trans.supporting_documents }}</h6>
+        {% if attachments %}
+        <span class="docs-count">{{ attachments|length }} {{ trans.files_label }}</span>
+        {% endif %}
+    </div>
+    <div class="docs-container mb-5">
+        {% for att in attachments %}
+        <a href="{{ att.file.url }}" target="_blank" class="doc-card">
+            <div class="doc-icon">
+                {% if "pdf" in att.file_name|lower %}
+                <span class="text-primary fw-bold" style="font-size: 0.6rem;">{{ trans.pdf_label }}</span>
+                {% elif "png" in att.file_name|lower or "jpg" in att.file_name|lower or "jpeg" in att.file_name|lower %}
+                <img src="{{ att.file.url }}" alt="Preview"
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                {% else %}
+                <i class="bi bi-file-text text-secondary fs-5"></i>
+                {% endif %}
+            </div>
+            <div class="doc-info">
+                <div class="doc-name" title="{{ att.file_name }}">{{ att.file_name }}</div>
+                <div class="doc-meta">
+                    {{ att.file_size|filesizeformat|default:"2.4 MB" }} •
+                    {% if "pdf" in att.file_name|lower %}{{ trans.pdf_label }}
+                    {% elif "png" in att.file_name|lower or "jpg" in att.file_name|lower %}{{ trans.image_label }}
+                    {% else %}{{ trans.file_label }}{% endif %}
+                </div>
+            </div>
+            <div class="doc-download">
+                <i class="bi bi-download"></i>
+            </div>
+        </a>
+        {% empty %}
+        <div class="doc-empty-state">
+            <div class="empty-icon-wrap">
+                <i class="bi bi-files"></i>
+            </div>
+            <h6>{{ trans.no_supporting_documents }}</h6>
+            <p>{{ trans.no_supporting_documents_text }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Comments Section #}
+    <div class="detail-card mb-4">
+        <div class="section-title">
+            <i class="bi bi-chat-left-text text-primary fs-5"></i> {{ trans.comments_section_title }}
+            <span class="badge bg-primary rounded-pill">{{ comments|length }}</span>
+        </div>
+        
+        <div class="comments-container" id="comments-container">
+            <div class="comments-list">
+                {% for comment in comments %}
+                    <div class="comment-wrapper">
+                        {% include 'support/includes/comment_item.html' %}
+                    </div>
+                {% empty %}
+                    <div class="text-center py-4 text-muted" id="comment-empty-state">
+                        <div class="d-flex justify-content-center mb-3">
+                            <i class="bi bi-chat-dots fs-3"></i>
+                        </div>
+                        <p class="small mb-0">{{ trans.no_comments_yet }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+            {% if comments|length > 10 %}
+            <div class="load-more-comments-wrapper" id="load-more-wrapper">
+                <button type="button" class="btn-load-more" id="btn-load-more">
+                    {{ trans.load_more_comments }}
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- New Comment Form -->
+        <form action="{% url 'support:ticket_detail' ticket.id %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="new-comment-box">
+                <!-- Upload Preview Area -->
+                <div class="comment-upload-preview-container" id="comment-preview-container"></div>
+                
+                <!-- Input box -->
+                <textarea name="comment_content" id="comment-textarea" class="new-comment-textarea" placeholder="{{ trans.type_message_placeholder }}" required></textarea>
+                
+                <!-- Toolbar footer -->
+                <div class="new-comment-toolbar">
+                    <div class="toolbar-buttons-left">
+                        <!-- Hidden file input -->
+                        <input type="file" name="comment_attachments" id="comment-attachments-input" multiple class="d-none">
+                        <button type="button" class="toolbar-btn" id="comment-attach-btn" title="{{ trans.attach_file_title }}">
+                            <i class="bi bi-paperclip"></i>
+                        </button>
+                        <button type="button" class="toolbar-btn" id="comment-emoji-btn" title="{{ trans.insert_emoji_title }}">
+                            <i class="bi bi-emoji-smile"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn-post-comment">
+                            {{ trans.post_comment_btn }} <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {# Activity Log #}
+    <div class="pd-history-wrap mt-4">
+        {% include 'commons/history.html' %}
+    </div>
+
+</div>
+<input type="hidden" id="happyCodeHiddenInput" value="">
+
+<!-- Happy Code Modal -->
+<div class="modal fade" id="happyCodeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 16px;">
+      <div class="modal-header border-0">
+        <h5 class="fw-bold"><i class="bi bi-shield-check me-2"></i> Happy Code Required</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-4">
+          <div class="mb-3" style="width: 64px; height: 64px; background: #e8f4ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+            <i class="bi bi-lock-fill fs-3 text-primary"></i>
+          </div>
+          <p class="text-muted mb-0">This ticket has a happy code that must be entered to close it.</p>
+          <p class="text-muted small">Ask the client to share the happy code shown on their portal.</p>
+        </div>
+        <div class="form-group mb-3">
+          <label class="fw-bold small mb-2">Client Happy Code</label>
+          <input type="text" id="happyCodeInput" class="form-control form-control-lg text-center"
+                 placeholder="Enter 6-character code"
+                 style="font-family: monospace; letter-spacing: 6px; font-size: 1.5rem;"
+                 maxlength="10" autocomplete="off">
+          <div id="happyCodeError" class="text-danger small mt-2 d-none">
+            <i class="bi bi-exclamation-circle me-1"></i> Please enter the happy code provided by the client.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 justify-content-center gap-2 pb-4">
+        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary px-4" id="happyCodeConfirmBtn">
+          <i class="bi bi-check-all me-1"></i> Confirm & Close Ticket
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block script %}
+<script src="{% static 'js/pages/support_tickets.js' %}" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const select = document.getElementById('statusSelect');
+    if (!select) return;
+
+    const oldStatus = '{{ ticket.status }}';
+    const happyCodeModal = new bootstrap.Modal(document.getElementById('happyCodeModal'));
+    const happyCodeInput = document.getElementById('happyCodeInput');
+    const happyCodeHidden = document.getElementById('happyCodeHiddenInput');
+    const happyCodeError = document.getElementById('happyCodeError');
+    const confirmBtn = document.getElementById('happyCodeConfirmBtn');
+    let pendingCode = null;
+
+    // Reset modal state on close
+    document.getElementById('happyCodeModal').addEventListener('hidden.bs.modal', function () {
+        if (!pendingCode) {
+            happyCodeInput.value = '';
+            happyCodeHidden.value = '';
+            happyCodeError.classList.add('d-none');
+            select.value = oldStatus;
+        }
+    });
+
+    const statusClasses = ['t-badge-status-0','t-badge-status-1','t-badge-status-2','t-badge-status-3','t-badge-status-4'];
+
+    function updateBadgeColor(status) {
+        statusClasses.forEach(cls => select.classList.remove(cls));
+        select.classList.add('t-badge-status-' + status);
+    }
+
+    function doUpdate(happyCode) {
+        const formData = new FormData();
+        formData.append('status', select.value);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        if (happyCode) formData.append('happy_code', happyCode);
+
+        fetch('{% url "support:ticket_update_status" ticket.id %}', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                happyCodeInput.value = '';
+                happyCodeHidden.value = '';
+                pendingCode = null;
+                updateBadgeColor(select.value);
+            } else {
+                if (data.happy_code_required) {
+                    happyCodeInput.value = '';
+                    happyCodeHidden.value = '';
+                    happyCodeError.classList.add('d-none');
+                    happyCodeModal.show();
+                    return;
+                }
+                alert(data.error || 'Failed to update status.');
+                select.value = oldStatus;
+            }
+        })
+        .catch(() => {
+            alert('Network error. Please try again.');
+            select.value = oldStatus;
+        });
+    }
+
+    select.addEventListener('change', function () {
+        const newStatus = this.value;
+
+        // If moving to Closed, show happy code modal
+        if (newStatus === '4' && oldStatus !== '4') {
+            pendingCode = null;
+            happyCodeInput.value = '';
+            happyCodeHidden.value = '';
+            happyCodeError.classList.add('d-none');
+            happyCodeModal.show();
+        } else {
+            doUpdate();
+        }
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        const code = happyCodeInput.value.trim();
+        if (!code) {
+            happyCodeError.classList.remove('d-none');
+            return;
+        }
+        happyCodeError.classList.add('d-none');
+        happyCodeHidden.value = code;
+        pendingCode = code;
+        happyCodeModal.hide();
+        doUpdate(code);
+    });
+
+    happyCodeInput.addEventListener('input', function () {
+        happyCodeError.classList.add('d-none');
+        this.value = this.value.toUpperCase();
+    });
+});
+</script>
+{% endblock script %}

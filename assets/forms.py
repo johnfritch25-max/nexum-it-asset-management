@@ -1,0 +1,366 @@
+from django import forms
+from assets.models import Asset, AssignAsset, AssetImage, AssetStatus, MaintenanceRecord
+from products.models import Product
+from vendors.models import Vendor
+from clients.models import Client
+from dashboard.models import Location
+from authentication.models import Technician, User
+from django.forms import ModelForm
+
+
+class AssetForm(forms.ModelForm):
+    status = forms.ModelChoiceField(
+        required=False,
+        queryset=AssetStatus.undeleted_objects.all().values_list("name", flat=True),
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    tag = forms.CharField(
+        required=True,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "class": "form-control",
+                "placeholder": "Enter Asset Tag",
+            }
+        ),
+    )
+    name = forms.CharField(
+        required=True,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "class": "form-control",
+                "placeholder": "Enter Asset Name",
+            }
+        ),
+    )
+    serial_no = forms.CharField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "class": "form-control",
+                "placeholder": "Enter Serial No.",
+            }
+        ),
+    )
+    price = forms.FloatField(
+        required=False,
+        widget=forms.NumberInput(
+            attrs={"class": "form-control", "placeholder": "Enter Price"}
+        ),
+    )
+    purchase_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+    )
+    warranty_expiry_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+    )
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control form-control-sm",
+                "rows": "3",
+                "placeholder": "Enter Description",
+            }
+        ),
+    )
+    purchase_type = forms.ChoiceField(
+        required=False,
+        choices=(
+            ("1", "Owned"),
+            ("2", "Rented"),
+        ),
+        initial=0,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    product = forms.ModelChoiceField(
+        required=True,
+        queryset=None,
+        empty_label="--SELECT--",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    vendor = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label="--SELECT--",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    client = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label="--SELECT--",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    location = forms.ModelChoiceField(
+        required=False,
+        queryset=None,
+        empty_label="--SELECT--",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self._organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+        self.fields["product"].queryset = Product.undeleted_objects.filter(
+            organization=self._organization, status=True
+        )
+        self.fields["vendor"].queryset = Vendor.undeleted_objects.filter(
+            organization=self._organization, status=True
+        )
+        self.fields["client"].queryset = Client.undeleted_objects.filter(
+            organization=self._organization
+        )
+        self.fields["location"].queryset = Location.undeleted_objects.filter(
+            organization=self._organization, status=True
+        )
+
+    def get_status(self):
+        """Returns the display value for the current status."""
+        status_value = self.cleaned_data.get("status") or self.initial.get("status")
+        if status_value is not None:
+            # status_value might be string ('1') or int (1)
+            for value, label in self.fields["status"].choices:
+                if str(value) == str(status_value):
+                    return label
+        return ""
+
+    class Meta:
+        model = Asset
+        fields = [
+            "name",
+            "serial_no",
+            "price",
+            "purchase_date",
+            "warranty_expiry_date",
+            "description",
+            "purchase_type",
+            "product",
+            "vendor",
+            "client",
+            "location",
+            "tag",
+            "status",
+        ]
+
+
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+
+class AssetImageForm(forms.ModelForm):
+    image = MultipleFileField(label="Select files", required=False)
+
+    class Meta:
+        model = AssetImage
+        fields = [
+            "image",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add the `multiple` attribute to allow selecting multiple files
+        self.fields["image"].widget.attrs.update({"multiple": "true"})
+
+
+class AssignedAssetForm(forms.ModelForm):
+    asset = forms.ModelChoiceField(
+        required=True,
+        queryset=Asset.undeleted_objects.filter(is_assigned=False, status=True),
+        label="Asset",
+        empty_label="--SELECT--",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    user = forms.ModelChoiceField(
+        required=True,
+        queryset=User.undeleted_objects.filter(is_active=True).exclude(
+            is_superuser=True
+        ),
+        empty_label="--SELECT--",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    image = MultipleFileField(label="Select files", required=False)
+
+    issue_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Additional details or condition reporting...",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self._organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+        self.fields["asset"].queryset = Asset.undeleted_objects.filter(
+            is_assigned=False, status=True, organization=self._organization
+        )
+        self.fields["user"].queryset = User.undeleted_objects.filter(
+            is_active=True, organization=self._organization
+        ).exclude(is_superuser=True)
+
+    class Meta:
+        model = AssignAsset
+        fields = ["asset", "user", "issue_date", "notes"]
+
+
+class AssignedAssetListForm(forms.ModelForm):
+    user = forms.ModelChoiceField(
+        required=True,
+        queryset=None,
+        empty_label="--SELECT--",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    issue_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Additional details or condition reporting...",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self._organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+        self.fields["user"].queryset = User.undeleted_objects.filter(
+            is_active=True, organization=self._organization
+        ).exclude(is_superuser=True)
+
+    class Meta:
+        model = AssignAsset
+        fields = ["user", "issue_date", "notes"]
+
+
+class ReassignedAssetForm(forms.ModelForm):
+    user = forms.ModelChoiceField(
+        required=True,
+        queryset=None,
+        empty_label="--SELECT--",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={"rows": 3, "placeholder": "Add an optional note for this reassignment..."}
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self._organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+        self.fields["user"].queryset = User.undeleted_objects.filter(
+            is_active=True, organization=self._organization
+        ).exclude(is_superuser=True)
+
+    class Meta:
+        model = AssignAsset
+        fields = ["user", "notes"]
+
+
+class AssetStatusForm(forms.ModelForm):
+    name = forms.CharField(
+        required=True,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "class": "form-control",
+                "placeholder": "Asset Status Name",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.organization = kwargs.pop("organization", None)
+        self.pk = kwargs.pop("pk", None)
+        super().__init__(*args, **kwargs)
+
+    class Meta:
+        model=AssetStatus
+        fields=['name']
+
+class MaintenanceRecordForm(forms.ModelForm):
+    technician = forms.ChoiceField(
+        choices=[('', 'Select Technician')],
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_technician'}),
+        required=True
+    )
+
+    def __init__(self, *args, **kwargs):
+        organization = kwargs.pop('organization', None)
+        super().__init__(*args, **kwargs)
+        if organization:
+            from authentication.models import User
+            users = User.undeleted_objects.filter(
+                organization=organization,
+                is_active=True
+            ).exclude(full_name__isnull=True).exclude(full_name='').order_by('full_name')
+
+            technicians=Technician.objects.filter(status=True).all()
+            
+            choices = [('', 'Select Technician')]
+            for technician in technicians:
+                display_name = technician.user.full_name or technician.user.reverse_full_name
+                choices.append((str(technician.id), display_name))
+            
+            self.fields['technician'].choices = choices
+
+    class Meta:
+        model = MaintenanceRecord
+        fields = ['date', 'maintenance_type', 'cost', 'technician', 'status']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'maintenance_type': forms.Select(attrs={'class': 'form-select'}, choices=[
+                ('1', 'Calibration'),
+                ('2', 'Breakdown'),
+                ('3', 'Preventive'),
+                ('4', 'Repair'),
+                ('5', 'Other'),
+            ]),
+            'cost': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0.00'}),
+            'status': forms.Select(attrs={'class': 'form-select'}, choices=[
+                ('1', 'New'),
+                ('2', 'In Progress'),
+                ('3', 'Completed'),
+            ]),
+        }
+
