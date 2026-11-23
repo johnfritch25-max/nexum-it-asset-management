@@ -1,0 +1,74 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+
+{% block title %}HR — Leave Requests{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+{% endblock css %}
+
+{% block content %}
+<div class="list-page-header">
+  <div>
+    <h1>Leave Requests</h1>
+    <p class="page-subtitle">Pending requests: <strong>{{ pending_count }}</strong></p>
+  </div>
+  <div>
+    <a href="{% url 'hr:leave_add' %}" class="btn-register">
+      <i class="bi bi-plus-lg"></i> Request Leave
+    </a>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Type</th>
+          <th>Dates</th>
+          <th>Days</th>
+          <th>Reason</th>
+          <th>Status</th>
+          {% if can_manage_hr %}<th class="text-end">Actions</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for leave in page_obj %}
+        <tr>
+          <td>{{ leave.employee.get_full_name }}</td>
+          <td>{{ leave.get_leave_type_display }}</td>
+          <td>{{ leave.start_date }} to {{ leave.end_date }}</td>
+          <td>{{ leave.total_days }}</td>
+          <td>{{ leave.reason|truncatechars:60 }}</td>
+          <td>
+            <span class="badge {% if leave.status == 'approved' %}bg-success{% elif leave.status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+              {{ leave.get_status_display }}
+            </span>
+          </td>
+          {% if can_manage_hr %}
+          <td class="text-end">
+            {% if leave.status == 'pending' %}
+            <form method="post" action="{% url 'hr:leave_update_status' leave.pk 'approved' %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-success">Approve</button>
+            </form>
+            <form method="post" action="{% url 'hr:leave_update_status' leave.pk 'rejected' %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+            </form>
+            {% else %}
+            <span class="text-muted small">Processed</span>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center text-muted py-4">No leave requests found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

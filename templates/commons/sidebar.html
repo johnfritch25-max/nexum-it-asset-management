@@ -127,6 +127,29 @@
                     </li>
                 {% endif %}
 
+                {% if request.user.is_authenticated %}
+                    <li class="sidebar-item has-sub {% if sidebar == 'hr' %}active{% endif %}">
+                        <a href="javascript:void(0)" class="sidebar-link">
+                            <i class="bi bi-person-badge-fill"></i>
+                            <span>Human Resources</span>
+                        </a>
+                        <ul class="submenu {% if sidebar == 'hr' %}active{% endif %}">
+                            <li class="submenu-item {% if submenu == 'hr_employees' %}active{% endif %}">
+                                <a href="{% url 'hr:employee_list' %}">Employees</a>
+                            </li>
+                            <li class="submenu-item {% if submenu == 'hr_attendance' %}active{% endif %}">
+                                <a href="{% url 'hr:attendance_list' %}">Attendance</a>
+                            </li>
+                            <li class="submenu-item {% if submenu == 'hr_leaves' %}active{% endif %}">
+                                <a href="{% url 'hr:leave_list' %}">Leave Requests</a>
+                            </li>
+                            <li class="submenu-item {% if submenu == 'hr_payroll' %}active{% endif %}">
+                                <a href="{% url 'hr:payroll_list' %}">Payroll</a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
+
                 {% if perms.audit.view_audit %}
                 <li class="sidebar-item {% if sidebar == 'audit' %}active{% endif %}">
                     <a href="{% url 'audit:pending_audits' %}" class="sidebar-link">

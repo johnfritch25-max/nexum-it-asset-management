@@ -1,0 +1,72 @@
+{% extends 'layouts/main-layout.html' %}
+{% load static %}
+
+{% block title %}HR — Payroll{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/pages/list-common.css' %}">
+{% endblock css %}
+
+{% block content %}
+<div class="list-page-header">
+  <div>
+    <h1>Payroll Records</h1>
+    <p class="page-subtitle">Total Net Payroll: <strong>{{ total_net|floatformat:2 }}</strong></p>
+  </div>
+  <div>
+    <a href="{% url 'hr:payroll_add' %}" class="btn-register">
+      <i class="bi bi-plus-lg"></i> Create Payroll
+    </a>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-body table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Period</th>
+          <th>Basic</th>
+          <th>Allowances</th>
+          <th>Deductions</th>
+          <th>Net Pay</th>
+          <th>Status</th>
+          {% if can_manage_hr %}<th class="text-end">Actions</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for pay in page_obj %}
+        <tr>
+          <td>{{ pay.employee.get_full_name }}</td>
+          <td>{{ pay.period_start }} to {{ pay.period_end }}</td>
+          <td>{{ pay.basic_pay }}</td>
+          <td>{{ pay.allowances }}</td>
+          <td>{{ pay.deductions }}</td>
+          <td class="fw-bold">{{ pay.net_pay }}</td>
+          <td>
+            <span class="badge {% if pay.status == 'paid' %}bg-success{% elif pay.status == 'approved' %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+              {{ pay.get_status_display }}
+            </span>
+          </td>
+          {% if can_manage_hr %}
+          <td class="text-end">
+            {% if pay.status != 'paid' %}
+            <form method="post" action="{% url 'hr:payroll_mark_paid' pay.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-success">Mark Paid</button>
+            </form>
+            {% else %}
+            <span class="text-muted small">Paid</span>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center text-muted py-4">No payroll records found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
